@@ -22,7 +22,7 @@ const SocialButton = ({ icon: Icon, label }) => (
  * The Sign In Form Component.
  */
 const SignInForm = ({ formData, onChange, onSubmit }) => (
-  <form onSubmit={onSubmit} className="w-full max-w-md px-8">
+  <form onSubmit={onSubmit} className="w-full max-w-sm px-6">
     <h1 className="text-5xl font-extrabold mb-8 text-gray-900">Sign In</h1>
     
     <div className="flex justify-center gap-3 mb-8">
@@ -69,7 +69,7 @@ const SignInForm = ({ formData, onChange, onSubmit }) => (
  * The Sign Up Form Component.
  */
 const SignUpForm = ({ formData, onChange, onSubmit }) => (
-  <form onSubmit={onSubmit} className="w-full max-w-md px-8">
+  <form onSubmit={onSubmit} className="w-full max-w-sm px-6">
     <h1 className="text-5xl font-extrabold mb-8 text-gray-900">Create Account</h1>
     
     <div className="flex justify-center gap-3 mb-8">
@@ -140,32 +140,14 @@ export default function AuthPage({ onLogin = () => {} }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(''); setSuccess('');
-    const url = isSignUpActive ? "http://localhost:5000/user/login" : "http://localhost:5000/user/register";
-    try {
-      const response = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(errorText || "Something went wrong");
-      }
-      const user = await response.json();
-      if (isSignUpActive) {
-        setSuccess("Login successful! Redirecting...");
-        triggerConfetti();
-        setTimeout(() => { onLogin(user); navigate("/"); }, 1200);
-      } else {
-        setSuccess("Registration successful! Please log in.");
-        triggerConfetti();
-        setTimeout(() => setIsSignUpActive(true), 1200);
-      }
-    } catch (err) { setError(err.message); }
+    // Demo-only: pretend success and redirect to main page
+    setSuccess(isSignUpActive ? "Signed up! Redirecting..." : "Signed in! Redirecting...");
+    triggerConfetti();
+    setTimeout(() => { onLogin(formData); navigate("/main"); }, 800);
   };
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-[#e6e9f0] to-[#dce1f3] p-6" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+    <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-[#e6e9f0] to-[#dce1f3] p-6" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
       <style>{`
         .auth-container {
           width: min(95vw, 1100px);
@@ -240,7 +222,18 @@ export default function AuthPage({ onLogin = () => {} }) {
           display: flex;
           align-items: center;
           justify-content: center;
-          padding: 3rem;
+          padding: 2.5rem;
+          position: relative;
+          z-index: 15;
+          transition: transform 0.8s cubic-bezier(0.19, 1, 0.22, 1);
+        }
+
+        .form-panel form {
+          width: min(100%, 360px);
+        }
+        
+        .form-panel.shifted {
+          transform: translateX(82%);
         }
         
         .social-btn {
@@ -302,6 +295,8 @@ export default function AuthPage({ onLogin = () => {} }) {
           .auth-container { grid-template-columns: 1fr; min-height: auto; }
           .purple-panel { border-radius: 0 0 200px 200px; transform: none !important; order: initial; }
           .purple-panel h2 { font-size: 2.5rem; }
+          .form-panel,
+          .form-panel.shifted { transform: none; }
         }
       `}</style>
 
@@ -309,38 +304,40 @@ export default function AuthPage({ onLogin = () => {} }) {
 
       {(error || success) && (
         <div
-          className={`fixed left-1/2 top-8 z-[1001] px-6 py-3 rounded-xl font-bold text-sm transition-all duration-500 animate-notif-center ${
+          className={`fixed px-6 py-3 rounded-xl font-bold text-sm transition-all duration-500 animate-notif-center pointer-events-none ${
             error ? "bg-red-500/90 text-white border border-red-400" : "bg-green-500/90 text-white border border-green-400"
           }`}
-          style={{ transform: "translateX(-50%)", minWidth: "280px", maxWidth: "90vw" }}
+          style={{ left: '50%', top: '30%', transform: "translateX(-50%)", minWidth: "280px", maxWidth: "90vw" }}
         >
           {error || success}
         </div>
       )}
 
-      <div className="auth-container">
-        <div className={`purple-panel ${isSignUpActive ? 'shifted' : ''}`}>
-          <h2>{isSignUpActive ? 'Hello, Friend!' : 'Welcome Back!'}</h2>
-          <p>
-            {isSignUpActive 
-              ? 'Register with your personal details to use all of site features'
-              : 'Enter your personal details to use all of site features'
-            }
-          </p>
-          <button 
-            onClick={() => setIsSignUpActive(!isSignUpActive)} 
-            className="outline-btn"
-          >
-            {isSignUpActive ? 'SIGN IN' : 'SIGN UP'}
-          </button>
-        </div>
+      <div style={{ position: 'relative', width: '100%', display: 'flex', justifyContent: 'center' }}>
+        <div className="auth-container">
+          <div className={`purple-panel ${isSignUpActive ? 'shifted' : ''}`}>
+            <h2>{isSignUpActive ? 'Hello, Friend!' : 'Welcome Back!'}</h2>
+            <p>
+              {isSignUpActive 
+                ? 'Register with your personal details to use all of site features'
+                : 'Enter your personal details to use all of site features'
+              }
+            </p>
+            <button 
+              onClick={() => setIsSignUpActive(!isSignUpActive)} 
+              className="outline-btn"
+            >
+              {isSignUpActive ? 'SIGN IN' : 'SIGN UP'}
+            </button>
+          </div>
 
-        <div className="form-panel">
-          {!isSignUpActive ? (
-            <SignInForm formData={formData} onChange={handleInputChange} onSubmit={handleSubmit} />
-          ) : (
-            <SignUpForm formData={formData} onChange={handleInputChange} onSubmit={handleSubmit} />
-          )}
+          <div className={`form-panel ${isSignUpActive ? 'shifted' : ''}`}>
+            {!isSignUpActive ? (
+              <SignInForm formData={formData} onChange={handleInputChange} onSubmit={handleSubmit} />
+            ) : (
+              <SignUpForm formData={formData} onChange={handleInputChange} onSubmit={handleSubmit} />
+            )}
+          </div>
         </div>
       </div>
     </div>
