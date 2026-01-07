@@ -13,35 +13,53 @@ import {
 import KickLogLogoGreen from "../../images/KickLog-logo-green.png";
 
 function SidebarRow({ icon: Icon, label, onClick, active, darkMode, collapsed }) {
+	const activeGlowStyle = active
+		? {
+			boxShadow: darkMode
+				? "0 0 0 2px color-mix(in srgb, var(--kl-active-accent, var(--accent-green-soft)) 55%, transparent), 0 14px 34px rgba(0,0,0,0.28)"
+				: "0 0 0 2px color-mix(in srgb, var(--kl-active-accent, var(--accent-green)) 55%, transparent), 0 14px 34px rgba(15,23,42,0.10)",
+		}
+		: undefined;
+
 	return (
 		<button
 			type="button"
 			onClick={onClick}
+			style={activeGlowStyle}
 			className={[
 				// keep layout identical to avoid icon "jump" on collapse/expand
 				"w-full flex items-center gap-2.5 rounded-xl px-3 py-2 text-left transition",
 				darkMode
-					? active
-						? "bg-white/10 text-white"
-						: "text-slate-200 hover:bg-white/5 hover:text-white"
-					: active
-						? "bg-slate-100 text-slate-900"
-						: "text-slate-900 hover:bg-slate-50",
+					? [
+						"text-slate-200 hover:bg-white/5 hover:text-white",
+						active ? "bg-white/5 text-white" : "",
+					].join(" ")
+					: [
+						"text-slate-900 hover:bg-slate-50",
+						active ? "bg-slate-50" : "",
+					].join(" "),
 			].join(" ")}
 			aria-label={collapsed ? label : undefined}
 			title={collapsed ? label : undefined}
 		>
 			{/* fixed icon box => icon never shifts */}
-			<span className="w-6 shrink-0 flex items-center justify-center">
-				<Icon className={darkMode ? "text-slate-100" : "text-slate-900"} size={18} />
+			<span
+				className={[
+					"w-6 shrink-0 flex items-center justify-center",
+					"transition-[transform,color]",
+					active ? "scale-[1.06]" : "scale-100",
+				].join(" ")}
+			>
+				<Icon className="text-current transition-colors" size={18} />
 			</span>
 
 			{/* always render; animate show/hide */}
 			<span
 				className={[
 					"sidebar-label overflow-hidden whitespace-nowrap text-[13px] font-semibold",
-					"transition-[max-width,opacity]",
+					"transition-[max-width,opacity,transform,color]",
 					collapsed ? "max-w-0 opacity-0" : "max-w-[180px] opacity-100",
+					active ? "translate-x-0.5" : "translate-x-0",
 				].join(" ")}
 			>
 				{label}
@@ -62,6 +80,8 @@ export default function MainSidebar({
 	collapsed = false,
 	onToggleCollapsed,
 }) {
+	const [hoveredKey, setHoveredKey] = useState(null);
+
 	const menuItems = [
 		{ key: "profile", icon: FaUser, label: "Profile" },
 		{ key: "diary", icon: FaBook, label: "Diary" },
@@ -111,19 +131,13 @@ export default function MainSidebar({
 
 		const padTop = 18;
 		const logoSize = 44;
-		const chevronSize = 26;
+		const chevronSize = 18;
 
-		const asideStyle = {
+		const wrapperStyle = {
 			width: isCollapsed ? collapsedWidth : expandedWidth,
 			height: isControlled ? "100vh" : `calc(100vh - ${gutter * 2}px)`,
 			minHeight: isControlled ? "100vh" : `calc(100vh - ${gutter * 2}px)`,
 			margin: isControlled ? 0 : `${gutter}px 0 ${gutter}px ${gutter}px`,
-			background: darkMode ? "#0b1220" : "#ffffff",
-			color: darkMode ? "#ffffff" : "#0f172a",
-			border: darkMode ? "1px solid rgba(255,255,255,0.10)" : "1px solid #e5e7eb",
-			borderRadius: isControlled ? 0 : 24,
-			boxShadow: darkMode ? "0 18px 48px rgba(0,0,0,0.35)" : "0 18px 48px rgba(15,23,42,0.08)",
-			boxSizing: "border-box",
 			position: isControlled ? "fixed" : "relative",
 			top: isControlled ? 0 : undefined,
 			bottom: isControlled ? 0 : undefined,
@@ -132,12 +146,29 @@ export default function MainSidebar({
 			transition: [
 				"transform var(--collapse-dur, 320ms) var(--collapse-ease, ease)",
 				"width var(--collapse-dur, 320ms) var(--collapse-ease, ease)",
+			].join(", "),
+			zIndex: 50,
+		};
+
+		const asideStyle = {
+			width: "100%",
+			height: "100%",
+			background: darkMode ? "#0b1220" : "#ffffff",
+			color: darkMode ? "#ffffff" : "#0f172a",
+			border: darkMode
+				? "2px solid color-mix(in srgb, rgba(255,255,255,0.14) 74%, var(--accent-green-soft) 26%)"
+				: "2px solid color-mix(in srgb, #e5e7eb 68%, var(--accent-green) 32%)",
+			borderRadius: isControlled ? 0 : 24,
+			boxShadow: darkMode ? "0 18px 48px rgba(0,0,0,0.35)" : "0 18px 48px rgba(15,23,42,0.08)",
+			boxSizing: "border-box",
+			overflow: "hidden",
+			padding: isCollapsed ? `${padTop}px 10px 14px` : `${padTop}px 18px 14px`,
+			transition: [
 				"background-color var(--theme-dur, 820ms) var(--theme-ease, ease)",
 				"color var(--theme-dur, 820ms) var(--theme-ease, ease)",
 				"border-color var(--theme-dur, 820ms) var(--theme-ease, ease)",
+				"box-shadow var(--theme-dur, 820ms) var(--theme-ease, ease)",
 			].join(", "),
-			zIndex: 50,
-			padding: isCollapsed ? `${padTop}px 10px 14px` : `${padTop}px 18px 14px`,
 		};
 
 		const overlayStyle = {
@@ -161,6 +192,7 @@ export default function MainSidebar({
 			background: darkMode ? "#0b1220" : "#ffffff",
 			border: darkMode ? "1px solid rgba(255,255,255,0.10)" : "1px solid #e5e7eb",
 			boxSizing: "border-box",
+			flex: "0 0 auto",
 		};
 
 		const logoInner = {
@@ -172,7 +204,7 @@ export default function MainSidebar({
 		};
 
 		// keep item layout identical; only hide label
-		const itemBtn = (active) => ({
+		const itemBtn = (active, hovered) => ({
 			width: "100%",
 			display: "flex",
 			alignItems: "center",
@@ -181,10 +213,34 @@ export default function MainSidebar({
 			padding: "8px 10px", // always
 			borderRadius: 14,
 			border: "none",
-			background: active ? (darkMode ? "rgba(255,255,255,0.08)" : "#f3f4f6") : "transparent",
+			background: (active || hovered) ? (darkMode ? "rgba(255,255,255,0.08)" : "#f3f4f6") : "transparent",
+			boxShadow: active
+				? darkMode
+					? "0 0 0 2px color-mix(in srgb, var(--kl-active-accent, var(--accent-green-soft)) 55%, transparent), 0 12px 28px rgba(0,0,0,0.28)"
+					: "0 0 0 2px color-mix(in srgb, var(--kl-active-accent, var(--accent-green)) 55%, transparent), 0 12px 28px rgba(15,23,42,0.10)"
+				: "none",
 			color: darkMode ? "#fff" : "#111827",
 			cursor: "pointer",
 			textAlign: "left",
+		});
+
+		const itemIconStyle = (active) => ({
+			width: 24,
+			display: "flex",
+			alignItems: "center",
+			justifyContent: "center",
+			flex: "0 0 auto",
+			transition: "transform var(--collapse-dur, 320ms) var(--collapse-ease, ease)",
+			transform: active ? "scale(1.06)" : "scale(1)",
+		});
+
+		const itemLabelStyle = (collapsedNow, active) => ({
+			fontWeight: 700,
+			fontSize: 13,
+			...labelStyle(collapsedNow),
+			transition:
+				"max-width var(--collapse-dur, 320ms) var(--theme-ease, ease), opacity var(--collapse-dur, 320ms) var(--theme-ease, ease), transform var(--collapse-dur, 320ms) var(--collapse-ease, ease)",
+			transform: active ? "translateX(2px)" : "translateX(0)",
 		});
 
 		const labelStyle = (collapsedNow) => ({
@@ -239,7 +295,8 @@ export default function MainSidebar({
 		const chevronBtnStyle = {
 			position: "absolute",
 			top: padTop + (logoSize - chevronSize) / 2, // centered to brand row
-			right: -14,
+			right: 0,
+			transform: isCollapsed ? "translateX(calc(50% + var(--kl-content-pad, 16px)))" : "translateX(50%)",
 			width: chevronSize,
 			height: chevronSize,
 			borderRadius: 999,
@@ -262,9 +319,10 @@ export default function MainSidebar({
 		const brandRow = {
 			display: "flex",
 			alignItems: "center",
-			gap: 10,
+			gap: isCollapsed ? 0 : 10,
 			justifyContent: "center",
 			width: "100%",
+			minWidth: 0,
 		};
 
 		return (
@@ -273,19 +331,9 @@ export default function MainSidebar({
 
 				{isControlled && <div style={overlayStyle} onClick={() => setOpen(false)} />}
 
-				<aside aria-label="Main sidebar" style={asideStyle}>
-					{/* toggle collapse */}
-					<button
-						type="button"
-						aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-						onClick={() => onToggleCollapsed?.(!isCollapsed)}
-						style={chevronBtnStyle}
-					>
-						<ArrowLeftIcon size={14} className={isCollapsed ? "" : ""} />
-						<span style={{ display: "none" }} />
-					</button>
-
-					<div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
+				<div style={wrapperStyle}>
+					<aside aria-label="Main sidebar" style={asideStyle}>
+						<div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
 						{/* header */}
 						<div style={{ display: "flex", alignItems: "center", justifyContent: "center", position: "relative" }}>
 							<div style={brandRow}>
@@ -301,6 +349,7 @@ export default function MainSidebar({
 										fontSize: 28,
 										lineHeight: 1.05,
 										...labelStyle(isCollapsed),
+										minWidth: 0,
 										maxWidth: isCollapsed ? 0 : 220,
 									}}
 								>
@@ -331,27 +380,33 @@ export default function MainSidebar({
 						</div>
 
 						<nav style={{ marginTop: 14, display: "grid", gap: 6, flex: 1 }}>
-							{menuItems.map((item) => (
-								<button
-									key={item.key}
-									type="button"
-									onClick={() => {
-										onSelect?.(item.key);
-										setOpen?.(false);
-									}}
-									style={itemBtn(activeKey === item.key)}
-									aria-label={isCollapsed ? item.label : undefined}
-									title={isCollapsed ? item.label : undefined}
-								>
-									<span style={{ width: 24, display: "flex", alignItems: "center", justifyContent: "center", flex: "0 0 auto" }}>
-										<item.icon size={18} />
-									</span>
+							{menuItems.map((item) => {
+								const isActive = activeKey === item.key;
+								const isHovered = hoveredKey === item.key;
+								return (
+									<button
+										key={item.key}
+										type="button"
+										onMouseEnter={() => setHoveredKey(item.key)}
+										onMouseLeave={() => setHoveredKey(null)}
+										onClick={() => {
+											onSelect?.(item.key);
+											setOpen?.(false);
+										}}
+										style={itemBtn(isActive, isHovered)}
+										aria-label={isCollapsed ? item.label : undefined}
+										title={isCollapsed ? item.label : undefined}
+									>
+											<span style={itemIconStyle(isActive)}>
+											<item.icon size={18} />
+										</span>
 
-									<span className="sidebar-label" style={{ fontWeight: 700, fontSize: 13, ...labelStyle(isCollapsed) }}>
-										{item.label}
-									</span>
-								</button>
-							))}
+											<span className="sidebar-label" style={itemLabelStyle(isCollapsed, isActive)}>
+											{item.label}
+										</span>
+									</button>
+								);
+							})}
 						</nav>
 
 						<button
@@ -374,7 +429,19 @@ export default function MainSidebar({
 							</div>
 						</button>
 					</div>
-				</aside>
+					</aside>
+
+					{/* toggle collapse (outside panel so it can't be clipped) */}
+					<button
+						type="button"
+						aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+						onClick={() => onToggleCollapsed?.(!isCollapsed)}
+						style={chevronBtnStyle}
+					>
+						<ArrowLeftIcon size={16} className={isCollapsed ? "" : ""} />
+						<span style={{ display: "none" }} />
+					</button>
+				</div>
 
 				{/* rotate arrow when collapsed (simple, no CSS file): */}
 				<style>{`
@@ -401,18 +468,14 @@ export default function MainSidebar({
 				/>
 			)}
 
-			<aside
+			<div
 				className={[
 					"relative",
 					"fixed inset-y-0 left-0 z-50 lg:static lg:z-auto",
 					isCollapsed ? "w-16" : "w-[280px]",
-					darkMode
-						? "bg-slate-950 text-white border border-white/10"
-						: "bg-white text-slate-900 border border-slate-200",
 					"rounded-none lg:rounded-[24px]",
 					"lg:my-4 lg:ml-4",
 					"lg:h-[calc(100vh-2rem)]",
-					"lg:shadow-[0_18px_48px_rgba(15,23,42,0.10)]",
 					"transition-[width,transform] duration-300",
 					isControlled
 						? isOpen
@@ -420,133 +483,144 @@ export default function MainSidebar({
 							: "-translate-x-full lg:translate-x-0"
 						: "translate-x-0",
 				].join(" ")}
-				aria-label="Main sidebar"
 			>
-				{/* toggle collapse */}
+				<aside
+					className={[
+						"h-full w-full",
+						"relative overflow-hidden isolate",
+						darkMode
+							? "bg-slate-950 text-white border border-white/10"
+							: "bg-white text-slate-900 border border-slate-200",
+						"rounded-none lg:rounded-[24px]",
+						"lg:shadow-[0_18px_48px_rgba(15,23,42,0.10)]",
+					].join(" ")}
+					aria-label="Main sidebar"
+				>
+					<div
+						className={[
+							"relative z-[1] flex h-full flex-col pt-5 pb-4",
+							isCollapsed ? "px-2" : "px-5",
+						].join(" ")}
+					>
+						{/* Brand */}
+						<div className="relative flex items-center justify-between">
+							<div className={["w-full flex items-center justify-center min-w-0", isCollapsed ? "" : "gap-3"].join(" ")}>
+								<div
+									className={[
+										"size-11 shrink-0 rounded-full overflow-hidden grid place-items-center border",
+										darkMode ? "bg-slate-950 border-white/10" : "bg-white border-slate-200",
+									].join(" ")}
+								>
+									<img src={KickLogLogoGreen} alt="KickLog" className="h-full w-full object-cover object-center" />
+								</div>
+
+								<div
+									className={[
+										"sidebar-title min-w-0 overflow-hidden whitespace-nowrap text-3xl font-extrabold tracking-tight",
+										"transition-[max-width,opacity]",
+										isCollapsed ? "max-w-0 opacity-0" : "max-w-[240px] opacity-100",
+									].join(" ")}
+								>
+									KickLog
+								</div>
+							</div>
+
+							{isControlled && (
+								<button
+									type="button"
+									className={[
+										"absolute right-0 top-1/2 -translate-y-1/2",
+										"lg:hidden inline-flex items-center justify-center rounded-xl p-2 ring-1 transition",
+										darkMode ? "text-slate-200 hover:bg-white/5 ring-white/10" : "text-slate-700 hover:bg-slate-100 ring-slate-200",
+									].join(" ")}
+									onClick={() => setOpen(false)}
+									aria-label="Close sidebar"
+								>
+									<FaTimes size={16} />
+								</button>
+							)}
+						</div>
+
+						{/* Nav */}
+						<nav className="mt-4 flex-1 space-y-1">
+							{menuItems.map((item) => (
+								<SidebarRow
+									key={item.key}
+									icon={item.icon}
+									label={item.label}
+									active={activeKey === item.key}
+									darkMode={darkMode}
+									collapsed={isCollapsed}
+									onClick={() => {
+										onSelect?.(item.key);
+										setOpen?.(false);
+									}}
+								/>
+							))}
+						</nav>
+
+						<button
+							type="button"
+							onClick={onToggleDarkMode}
+							aria-label="Toggle dark mode"
+							aria-pressed={!!darkMode}
+							title={isCollapsed ? "Dark mode" : undefined}
+							className={[
+								"mt-2 w-full rounded-xl transition",
+								isCollapsed ? "flex items-center justify-center px-0 py-2" : "flex items-center justify-between px-3 py-2",
+								darkMode ? "hover:bg-white/5" : "hover:bg-slate-50",
+							].join(" ")}
+						>
+							<div className={["flex items-center", isCollapsed ? "" : "gap-3"].join(" ")}>
+								<span
+									className={[
+										"relative h-6 w-11 rounded-full transition",
+										darkMode ? "bg-emerald-200" : "bg-emerald-600",
+									].join(" ")}
+								>
+									<span
+										className={[
+											"absolute top-0.5 size-5 rounded-full transition-transform",
+											"bg-slate-900",
+											darkMode ? "translate-x-5" : "translate-x-0.5",
+										].join(" ")}
+									/>
+								</span>
+
+								<span
+									className={[
+										"sidebar-dark-label overflow-hidden whitespace-nowrap text-[15px] font-semibold",
+										"transition-[max-width,opacity]",
+										isCollapsed ? "max-w-0 opacity-0" : "max-w-[140px] opacity-100",
+									].join(" ")}
+								>
+									Dark mode
+								</span>
+							</div>
+						</button>
+					</div>
+				</aside>
+
+				{/* toggle collapse (outside panel so it can't be clipped) */}
 				<button
 					type="button"
 					aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
 					onClick={() => onToggleCollapsed?.(!isCollapsed)}
 					className={[
-						"absolute top-5 -right-3 z-[60]",
-						"flex items-center justify-center leading-none size-6 rounded-full shadow-lg",
+						"absolute top-5 right-0 z-[60]",
+						"flex items-center justify-center leading-none size-5 rounded-full shadow-lg",
 						"ring-1 ring-black/10",
-						// reverse: dark => emerald-200, light => emerald-600
 						darkMode ? "bg-emerald-200 text-slate-900" : "bg-emerald-600 text-white",
 					].join(" ")}
+					style={{
+						transform: isCollapsed ? "translateX(calc(50% + var(--kl-content-pad, 16px)))" : "translateX(50%)",
+					}}
 				>
 					<span className={isCollapsed ? "rotate-180" : ""}>
 						<ArrowLeftIcon className="size-4" />
 					</span>
 				</button>
-
-				<div className={["flex h-full flex-col pt-5 pb-4", isCollapsed ? "px-2" : "px-5"].join(" ")}>
-					{/* Brand */}
-					<div className="relative flex items-center justify-between">
-						<div className={["w-full flex items-center justify-center", isCollapsed ? "" : "gap-3"].join(" ")}>
-							<div
-								className={[
-									"size-11 rounded-full overflow-hidden grid place-items-center border",
-									darkMode ? "bg-slate-950 border-white/10" : "bg-white border-slate-200",
-								].join(" ")}
-							>
-								<img
-									src={KickLogLogoGreen}
-									alt="KickLog"
-									className="h-full w-full object-cover object-center"
-								/>
-							</div>
-
-							{/* always render; animate */}
-							<div
-								className={[
-									"sidebar-title overflow-hidden whitespace-nowrap text-3xl font-extrabold tracking-tight",
-									"transition-[max-width,opacity]",
-									isCollapsed ? "max-w-0 opacity-0" : "max-w-[240px] opacity-100",
-								].join(" ")}
-							>
-								KickLog
-							</div>
-						</div>
-
-						{isControlled && (
-							<button
-								type="button"
-								className={[
-									// NEW: absolute so it doesn't affect centering
-									"absolute right-0 top-1/2 -translate-y-1/2",
-									"lg:hidden inline-flex items-center justify-center rounded-xl p-2 ring-1 transition",
-									darkMode ? "text-slate-200 hover:bg-white/5 ring-white/10" : "text-slate-700 hover:bg-slate-100 ring-slate-200",
-								].join(" ")}
-								onClick={() => setOpen(false)}
-								aria-label="Close sidebar"
-							>
-								<FaTimes size={16} />
-							</button>
-						)}
-					</div>
-
-					{/* Nav */}
-					<nav className="mt-4 flex-1 space-y-1">
-						{menuItems.map((item) => (
-							<SidebarRow
-								key={item.key}
-								icon={item.icon}
-								label={item.label}
-								active={activeKey === item.key}
-								darkMode={darkMode}
-								collapsed={isCollapsed}
-								onClick={() => {
-									onSelect?.(item.key);
-									setOpen?.(false);
-								}}
-							/>
-						))}
-					</nav>
-
-					<button
-						type="button"
-						onClick={onToggleDarkMode}
-						aria-label="Toggle dark mode"
-						aria-pressed={!!darkMode}
-						title={isCollapsed ? "Dark mode" : undefined}
-						className={[
-							"mt-2 w-full rounded-xl transition",
-							isCollapsed ? "flex items-center justify-center px-0 py-2" : "flex items-center justify-between px-3 py-2",
-							darkMode ? "hover:bg-white/5" : "hover:bg-slate-50",
-						].join(" ")}
-					>
-						<div className={["flex items-center", isCollapsed ? "" : "gap-3"].join(" ")}>
-							<span
-								className={[
-									"relative h-6 w-11 rounded-full transition",
-									// reverse: dark => emerald-200, light => emerald-600
-									darkMode ? "bg-emerald-200" : "bg-emerald-600",
-								].join(" ")}
-							>
-								<span
-									className={[
-										"absolute top-0.5 size-5 rounded-full transition-transform",
-										"bg-slate-900",
-										darkMode ? "translate-x-5" : "translate-x-0.5",
-									].join(" ")}
-								/>
-							</span>
-
-							{/* always render; animate */}
-							<span
-								className={[
-									"sidebar-dark-label overflow-hidden whitespace-nowrap text-[15px] font-semibold",
-									"transition-[max-width,opacity]",
-									isCollapsed ? "max-w-0 opacity-0" : "max-w-[140px] opacity-100",
-								].join(" ")}
-							>
-								Dark mode
-							</span>
-						</div>
-					</button>
-				</div>
-			</aside>
+			</div>
 		</>
 	);
 }

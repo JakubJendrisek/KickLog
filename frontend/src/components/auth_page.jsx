@@ -13,8 +13,9 @@ const SocialButton = ({ icon: Icon, label }) => (
     type="button"
     className="social-btn"
     title={label}
+    aria-label={label}
   >
-    <Icon className="text-gray-600" size={18} />
+    <Icon className="social-icon" size={18} />
   </button>
 );
 
@@ -22,8 +23,8 @@ const SocialButton = ({ icon: Icon, label }) => (
  * The Sign In Form Component.
  */
 const SignInForm = ({ formData, onChange, onSubmit }) => (
-  <form onSubmit={onSubmit} className="w-full max-w-sm px-6">
-    <h1 className="text-5xl font-extrabold mb-8 text-gray-900">Sign In</h1>
+  <form onSubmit={onSubmit} className="auth-form" aria-label="Sign in form">
+    <h1 className="auth-title">Sign In</h1>
     
     <div className="flex justify-center gap-3 mb-8">
       <SocialButton icon={FaGoogle} label="Google" />
@@ -32,7 +33,7 @@ const SignInForm = ({ formData, onChange, onSubmit }) => (
       <SocialButton icon={FaLinkedinIn} label="LinkedIn" />
     </div>
     
-    <p className="text-sm text-gray-500 mb-6 text-center">or use your email password</p>
+    <p className="auth-subtitle">or use your email password</p>
     
     <div className="space-y-4">
       <input
@@ -55,7 +56,7 @@ const SignInForm = ({ formData, onChange, onSubmit }) => (
       />
     </div>
     
-    <a href="#" className="text-sm text-gray-500 hover:text-gray-700 block mt-4">
+    <a href="#" className="auth-link">
       Forget Your Password?
     </a>
     
@@ -69,8 +70,8 @@ const SignInForm = ({ formData, onChange, onSubmit }) => (
  * The Sign Up Form Component.
  */
 const SignUpForm = ({ formData, onChange, onSubmit }) => (
-  <form onSubmit={onSubmit} className="w-full max-w-sm px-6">
-    <h1 className="text-5xl font-extrabold mb-8 text-gray-900">Create Account</h1>
+  <form onSubmit={onSubmit} className="auth-form" aria-label="Sign up form">
+    <h1 className="auth-title">Create Account</h1>
     
     <div className="flex justify-center gap-3 mb-8">
       <SocialButton icon={FaGoogle} label="Google" />
@@ -79,7 +80,7 @@ const SignUpForm = ({ formData, onChange, onSubmit }) => (
       <SocialButton icon={FaLinkedinIn} label="LinkedIn" />
     </div>
     
-    <p className="text-sm text-gray-500 mb-6 text-center">or use your email for registration</p>
+    <p className="auth-subtitle">or use your email for registration</p>
     
     <div className="space-y-4">
       <input
@@ -147,22 +148,97 @@ export default function AuthPage({ onLogin = () => {} }) {
   };
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-[#e6e9f0] to-[#dce1f3] p-6" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+    <div className="auth-root" style={{ minHeight: '100vh', position: 'relative' }}>
       <style>{`
+        .auth-root {
+          --kl-auth-bg: color-mix(in srgb, #ffffff 96%, var(--accent-green-soft, #bbf7d0) 4%);
+          --kl-auth-fg: #0f172a;
+          --kl-auth-surface: color-mix(in srgb, #ffffff 92%, var(--accent-green-soft, #bbf7d0) 8%);
+          --kl-auth-surface2: color-mix(in srgb, #ffffff 86%, var(--accent-green-soft, #bbf7d0) 14%);
+          --kl-auth-stroke: color-mix(in srgb, #e5e7eb 70%, var(--accent-green-soft, #bbf7d0) 30%);
+          --kl-auth-muted: color-mix(in srgb, var(--kl-auth-fg) 58%, transparent);
+          --kl-auth-ease: var(--theme-ease, cubic-bezier(0.2, 0.8, 0.2, 1));
+          --kl-auth-dur: var(--theme-dur, 820ms);
+
+          width: 100%;
+          display: grid;
+          place-items: center;
+          padding: 24px;
+          color: var(--kl-auth-fg);
+          background: var(--kl-auth-bg);
+          overflow: hidden;
+          isolation: isolate;
+        }
+
+        .auth-root::before {
+          content: "";
+          position: fixed;
+          inset: -4px;
+          pointer-events: none;
+          z-index: 0;
+          filter: blur(20px) saturate(1.45);
+          opacity: 0.92;
+          animation: authPaneDrift 16s var(--kl-auth-ease) infinite;
+          background:
+            radial-gradient(
+              720px 260px at 10% 0%,
+              color-mix(in srgb, var(--accent-green, #16a34a) 52%, transparent),
+              transparent 62%
+            ),
+            radial-gradient(
+              760px 300px at 96% 18%,
+              color-mix(in srgb, var(--accent-green-soft, #bbf7d0) 44%, transparent),
+              transparent 66%
+            ),
+            radial-gradient(
+              560px 320px at 20% 102%,
+              color-mix(in srgb, color-mix(in srgb, var(--accent-green, #16a34a) 72%, var(--accent-green-soft, #bbf7d0)) 34%, transparent),
+              transparent 66%
+            );
+        }
+
+        @keyframes authPaneDrift {
+          0% { transform: translate3d(0px, 0px, 0) scale(1); }
+          50% { transform: translate3d(14px, -10px, 0) scale(1.02); }
+          100% { transform: translate3d(0px, 0px, 0) scale(1); }
+        }
+
+        @keyframes authEnter {
+          0% { opacity: 0; transform: translateY(14px) scale(0.99); filter: blur(10px); }
+          100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+        }
+
+        @keyframes authSwap {
+          0% { opacity: 0; transform: translateY(10px); filter: blur(8px); }
+          100% { opacity: 1; transform: translateY(0); filter: blur(0); }
+        }
+
         .auth-container {
           width: min(95vw, 1100px);
           min-height: 640px;
           border-radius: 40px;
-          box-shadow: 0 25px 70px rgba(0,0,0,0.25);
-          background: white;
+          border: 2px solid var(--kl-auth-stroke);
+          box-shadow: 0 28px 80px rgba(0,0,0,0.20);
+          background: color-mix(in srgb, var(--kl-auth-surface) 72%, transparent);
+          -webkit-backdrop-filter: blur(14px);
+          backdrop-filter: blur(14px);
           display: grid;
           grid-template-columns: 55% 45%;
           overflow: hidden;
           position: relative;
+          z-index: 1;
+          animation: authEnter var(--kl-auth-dur) var(--kl-auth-ease) both;
         }
         
         .purple-panel {
-          background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
+          background:
+            radial-gradient(820px 420px at 0% 0%, color-mix(in srgb, var(--accent-green-soft, #bbf7d0) 42%, transparent), transparent 55%),
+            linear-gradient(
+              135deg,
+              color-mix(in srgb, var(--accent-green, #16a34a) 72%, #0b1220) 0%,
+              color-mix(in srgb, var(--accent-green, #16a34a) 42%, #0b1220) 55%,
+              color-mix(in srgb, var(--accent-green, #16a34a) 64%, #0b1220) 100%
+            );
           border-radius: 200px 0 0 200px;
           display: flex;
           flex-direction: column;
@@ -173,7 +249,7 @@ export default function AuthPage({ onLogin = () => {} }) {
           text-align: center;
           position: relative;
           z-index: 10;
-          transition: transform 0.8s cubic-bezier(0.19, 1, 0.22, 1), border-radius 0.8s cubic-bezier(0.19, 1, 0.22, 1);
+          transition: transform var(--kl-auth-dur) var(--kl-auth-ease), border-radius var(--kl-auth-dur) var(--kl-auth-ease);
           order: 2;
         }
         
@@ -209,13 +285,13 @@ export default function AuthPage({ onLogin = () => {} }) {
           letter-spacing: 0.1em;
           text-transform: uppercase;
           cursor: pointer;
-          transition: all 0.3s ease;
+          transition: transform var(--kl-auth-dur) var(--kl-auth-ease), background-color var(--kl-auth-dur) var(--kl-auth-ease), color var(--kl-auth-dur) var(--kl-auth-ease);
         }
         
         .outline-btn:hover {
           background: white;
-          color: #8b5cf6;
-          transform: scale(1.05);
+          color: color-mix(in srgb, var(--accent-green, #16a34a) 70%, #0b1220);
+          transform: translateY(-2px) scale(1.03);
         }
         
         .form-panel {
@@ -225,7 +301,7 @@ export default function AuthPage({ onLogin = () => {} }) {
           padding: 2.5rem;
           position: relative;
           z-index: 15;
-          transition: transform 0.8s cubic-bezier(0.19, 1, 0.22, 1);
+          transition: transform var(--kl-auth-dur) var(--kl-auth-ease);
         }
 
         .form-panel form {
@@ -235,46 +311,109 @@ export default function AuthPage({ onLogin = () => {} }) {
         .form-panel.shifted {
           transform: translateX(82%);
         }
+
+        .auth-form {
+          width: min(100%, 360px);
+          padding: 0 24px;
+          animation: authSwap 360ms var(--kl-auth-ease) both;
+        }
+
+        .auth-title {
+          font-size: 44px;
+          line-height: 1.05;
+          font-weight: 900;
+          letter-spacing: -0.02em;
+          margin: 0 0 22px;
+          color: var(--kl-auth-fg);
+        }
+
+        .auth-subtitle {
+          font-size: 12px;
+          color: var(--kl-auth-muted);
+          font-weight: 900;
+          letter-spacing: 0.01em;
+          margin: 0 0 18px;
+          text-align: center;
+        }
+
+        .auth-link {
+          font-size: 12px;
+          color: var(--kl-auth-muted);
+          font-weight: 900;
+          text-decoration: none;
+          display: inline-block;
+          margin-top: 14px;
+          transition: color var(--kl-auth-dur) var(--kl-auth-ease);
+        }
+
+        .auth-link:hover {
+          color: color-mix(in srgb, var(--kl-auth-fg) 86%, var(--accent-green, #16a34a));
+        }
         
         .social-btn {
           width: 48px;
           height: 48px;
-          border: 1.5px solid #d1d5db;
+          border: 1.5px solid var(--kl-auth-stroke);
           border-radius: 50%;
           display: inline-flex;
           align-items: center;
           justify-content: center;
-          background: white;
-          transition: all 0.25s ease;
+          background: color-mix(in srgb, var(--kl-auth-surface) 80%, transparent);
+          transition: transform var(--kl-auth-dur) var(--kl-auth-ease), border-color var(--kl-auth-dur) var(--kl-auth-ease), background-color var(--kl-auth-dur) var(--kl-auth-ease);
           cursor: pointer;
+        }
+
+        .social-icon {
+          color: color-mix(in srgb, var(--kl-auth-fg) 62%, transparent);
+          transition: color var(--kl-auth-dur) var(--kl-auth-ease);
         }
         
         .social-btn:hover {
-          background: #f3f4f6;
-          border-color: #9ca3af;
-          transform: translateY(-2px);
+          background: color-mix(in srgb, var(--kl-auth-surface2) 80%, transparent);
+          border-color: color-mix(in srgb, var(--accent-green, #16a34a) 36%, var(--kl-auth-stroke));
+          transform: translateY(-3px);
+        }
+
+        .social-btn:hover .social-icon {
+          color: color-mix(in srgb, var(--accent-green, #16a34a) 70%, var(--kl-auth-fg));
         }
         
         .form-input {
           width: 100%;
           padding: 16px 20px;
-          border: none;
-          background: #f3f4f6;
+          border: 1px solid var(--kl-auth-stroke);
+          background: color-mix(in srgb, var(--kl-auth-surface) 78%, transparent);
           border-radius: 12px;
           font-size: 0.95rem;
           outline: none;
-          transition: all 0.2s ease;
+          color: var(--kl-auth-fg);
+          font-weight: 800;
+          transition: border-color var(--kl-auth-dur) var(--kl-auth-ease), box-shadow var(--kl-auth-dur) var(--kl-auth-ease), background-color var(--kl-auth-dur) var(--kl-auth-ease);
+        }
+
+        .form-input::placeholder {
+          color: color-mix(in srgb, var(--kl-auth-muted) 90%, transparent);
+          font-weight: 800;
         }
         
         .form-input:focus {
-          background: #e5e7eb;
-          box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+          background: color-mix(in srgb, var(--kl-auth-surface2) 76%, transparent);
+          border-color: color-mix(in srgb, var(--accent-green, #16a34a) 40%, var(--kl-auth-stroke));
+          box-shadow:
+            0 0 0 3px color-mix(in srgb, var(--accent-green-soft, #bbf7d0) 55%, transparent),
+            0 10px 30px rgba(0,0,0,0.14);
         }
         
         .primary-btn {
           width: 100%;
           padding: 16px 24px;
-          background: linear-gradient(135deg, #8b5cf6 0%, #a855f7 100%);
+          background:
+            radial-gradient(520px 180px at 30% 0%, color-mix(in srgb, var(--accent-green-soft, #bbf7d0) 55%, transparent), transparent 60%),
+            linear-gradient(
+              135deg,
+              color-mix(in srgb, var(--accent-green, #16a34a) 78%, #0b1220) 0%,
+              color-mix(in srgb, var(--accent-green, #16a34a) 58%, #0b1220) 100%
+            );
           color: white;
           border: none;
           border-radius: 50px;
@@ -282,13 +421,35 @@ export default function AuthPage({ onLogin = () => {} }) {
           font-weight: 700;
           letter-spacing: 0.1em;
           cursor: pointer;
-          transition: all 0.3s ease;
-          box-shadow: 0 10px 30px rgba(139, 92, 246, 0.3);
+          transition: transform var(--kl-auth-dur) var(--kl-auth-ease), box-shadow var(--kl-auth-dur) var(--kl-auth-ease), filter var(--kl-auth-dur) var(--kl-auth-ease);
+          box-shadow:
+            0 18px 52px rgba(0, 0, 0, 0.30),
+            0 0 0 1px rgba(22, 163, 74, 0.18);
         }
         
         .primary-btn:hover {
           transform: translateY(-2px);
-          box-shadow: 0 15px 40px rgba(139, 92, 246, 0.4);
+          box-shadow:
+            0 22px 64px rgba(0, 0, 0, 0.34),
+            0 0 0 2px rgba(187, 247, 208, 0.34),
+            0 0 0 10px rgba(22, 163, 74, 0.16);
+          filter: saturate(1.08);
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .auth-container { animation: none !important; }
+          .auth-form { animation: none !important; }
+          .auth-root::before { animation: none !important; }
+          .purple-panel,
+          .form-panel {
+            transition: none !important;
+          }
+          .outline-btn,
+          .social-btn,
+          .primary-btn,
+          .form-input {
+            transition: none !important;
+          }
         }
         
         @media (max-width: 968px) {
@@ -313,7 +474,7 @@ export default function AuthPage({ onLogin = () => {} }) {
         </div>
       )}
 
-      <div style={{ position: 'relative', width: '100%', display: 'flex', justifyContent: 'center' }}>
+      <div style={{ position: 'relative', width: '100%', display: 'flex', justifyContent: 'center', zIndex: 1 }}>
         <div className="auth-container">
           <div className={`purple-panel ${isSignUpActive ? 'shifted' : ''}`}>
             <h2>{isSignUpActive ? 'Hello, Friend!' : 'Welcome Back!'}</h2>
@@ -333,9 +494,9 @@ export default function AuthPage({ onLogin = () => {} }) {
 
           <div className={`form-panel ${isSignUpActive ? 'shifted' : ''}`}>
             {!isSignUpActive ? (
-              <SignInForm formData={formData} onChange={handleInputChange} onSubmit={handleSubmit} />
+              <SignInForm key="signin" formData={formData} onChange={handleInputChange} onSubmit={handleSubmit} />
             ) : (
-              <SignUpForm formData={formData} onChange={handleInputChange} onSubmit={handleSubmit} />
+              <SignUpForm key="signup" formData={formData} onChange={handleInputChange} onSubmit={handleSubmit} />
             )}
           </div>
         </div>

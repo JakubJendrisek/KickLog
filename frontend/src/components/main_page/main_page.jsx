@@ -41,6 +41,7 @@ export default function MainPage() {
 	return (
 		<div
 			data-page="main"
+			data-theme={darkMode ? "dark" : "light"}
 			data-sidebar-collapsed={sidebarCollapsed ? "true" : "false"}
 			className={darkMode ? "min-h-screen bg-slate-950 text-white" : "min-h-screen bg-white text-slate-900"}
 			style={{
@@ -51,14 +52,149 @@ export default function MainPage() {
 				"--collapse-ease": "var(--theme-ease)",
 				"--accent-green": "#16a34a", // strong (emerald-600)
 				"--accent-green-soft": "#bbf7d0", // soft (emerald-200)
+				// Strong borders for panels + active item glow source
+				"--kl-sidebar-border-strong": darkMode
+					? "color-mix(in srgb, rgba(255,255,255,0.14) 74%, var(--accent-green-soft) 26%)"
+					: "color-mix(in srgb, #e5e7eb 68%, var(--accent-green) 32%)",
+				"--kl-content-border-strong": darkMode
+					? "color-mix(in srgb, rgba(255,255,255,0.12) 70%, var(--accent-green) 30%)"
+					: "color-mix(in srgb, #e5e7eb 70%, var(--accent-green-soft) 30%)",
+				"--kl-active-accent": "var(--kl-content-border-strong)",
+				"--kl-bg": darkMode ? "#0b1220" : "#ffffff",
+				"--kl-fg": darkMode ? "#ffffff" : "#0f172a",
 				minHeight: "100vh",
-				background: darkMode ? "#0b1220" : "#ffffff",
+				background: darkMode ? "#0b1220" : "color-mix(in srgb, #ffffff 96%, var(--accent-green-soft) 4%)",
 				color: darkMode ? "#ffffff" : "#0f172a",
 				...transitionStyle,
 			}}
 		>
 			{/* Sync sidebar + rest of UI: same duration/ease everywhere (theme-related props only). */}
 			<style>{`
+				/* Shared layout variables */
+				[data-page="main"] {
+					/* Matches MainContent wrapper padding: p-4 (16px), sm:p-5 (20px) */
+					--kl-content-pad: 16px;
+				}
+				@media (min-width: 640px) {
+					[data-page="main"] { --kl-content-pad: 20px; }
+				}
+
+				/* ===== Dynamic accent glow (sidebar + content) ===== */
+				[data-page="main"] aside[aria-label="Main sidebar"],
+				[data-page="main"] main[aria-label="Main content"] {
+					position: relative;
+					overflow: hidden;
+					isolation: isolate;
+				}
+
+				[data-page="main"] aside[aria-label="Main sidebar"]::before,
+				[data-page="main"] main[aria-label="Main content"]::before {
+					content: "";
+					position: absolute;
+					inset: -2px;
+					pointer-events: none;
+					z-index: 0;
+					filter: blur(22px) saturate(1.35);
+					opacity: 0.92;
+					transform: translate3d(0,0,0);
+					animation: klPaneDrift 16s var(--theme-ease) infinite;
+					background:
+						radial-gradient(
+							680px 260px at 8% 0%,
+							color-mix(in srgb, var(--accent-green) 44%, transparent),
+							transparent 62%
+						),
+						radial-gradient(
+							720px 260px at 92% 14%,
+							color-mix(in srgb, var(--accent-green-soft) 34%, transparent),
+							transparent 64%
+						),
+						radial-gradient(
+							520px 280px at 18% 100%,
+							color-mix(in srgb, color-mix(in srgb, var(--accent-green) 70%, var(--accent-green-soft)) 26%, transparent),
+							transparent 64%
+						);
+				}
+
+				/* Theme-tune the glow so it stays colorful (not too dark/light). */
+				[data-page="main"][data-theme="dark"] aside[aria-label="Main sidebar"]::before,
+				[data-page="main"][data-theme="dark"] main[aria-label="Main content"]::before {
+					opacity: 0.98;
+					filter: blur(22px) saturate(1.45);
+				}
+				[data-page="main"][data-theme="light"] aside[aria-label="Main sidebar"]::before,
+				[data-page="main"][data-theme="light"] main[aria-label="Main content"]::before {
+					opacity: 0.92;
+					filter: blur(16px) saturate(1.65);
+				}
+
+				/* Light mode: gently tint panel surfaces so the motive isn't "too white" */
+				[data-page="main"][data-theme="light"] aside[aria-label="Main sidebar"],
+				[data-page="main"][data-theme="light"] main[aria-label="Main content"] {
+					background-color: color-mix(in srgb, #ffffff 93%, var(--accent-green-soft) 7%) !important;
+					border-color: var(--kl-content-border-strong) !important;
+					border-width: 2px !important;
+				}
+
+				/* Strong borders: sidebar and content can differ slightly */
+				[data-page="main"] aside[aria-label="Main sidebar"] {
+					border-width: 2px !important;
+					border-color: var(--kl-sidebar-border-strong) !important;
+				}
+				[data-page="main"] main[aria-label="Main content"] {
+					border-width: 2px !important;
+					border-color: var(--kl-content-border-strong) !important;
+				}
+
+				[data-page="main"][data-theme="light"] aside[aria-label="Main sidebar"]::before,
+				[data-page="main"][data-theme="light"] main[aria-label="Main content"]::before {
+					background:
+						radial-gradient(
+							680px 260px at 10% 0%,
+							color-mix(in srgb, var(--accent-green) 52%, transparent),
+							transparent 62%
+						),
+						radial-gradient(
+							760px 300px at 96% 18%,
+							color-mix(in srgb, var(--accent-green-soft) 44%, transparent),
+							transparent 66%
+						),
+						radial-gradient(
+							560px 320px at 20% 102%,
+							color-mix(in srgb, color-mix(in srgb, var(--accent-green) 72%, var(--accent-green-soft)) 34%, transparent),
+							transparent 66%
+						);
+				}
+
+				/* Slightly different feel between panels */
+				[data-page="main"] aside[aria-label="Main sidebar"]::before {
+					animation-duration: 18s;
+					filter: blur(24px) saturate(1.35);
+				}
+				[data-page="main"] main[aria-label="Main content"]::before {
+					animation-duration: 14s;
+					filter: blur(20px) saturate(1.35);
+				}
+
+				@keyframes klPaneDrift {
+					0% {
+						transform: translate3d(0px, 0px, 0) scale(1);
+					}
+					50% {
+						transform: translate3d(14px, -10px, 0) scale(1.02);
+					}
+					100% {
+						transform: translate3d(0px, 0px, 0) scale(1);
+					}
+				}
+
+				@media (prefers-reduced-motion: reduce) {
+					[data-page="main"] aside[aria-label="Main sidebar"]::before,
+					[data-page="main"] main[aria-label="Main content"]::before {
+						animation: none !important;
+					}
+				}
+
 				/* Keep a single easing everywhere */
 				[data-page="main"],
 				[data-page="main"] aside[aria-label="Main sidebar"],
