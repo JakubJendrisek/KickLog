@@ -385,6 +385,7 @@ const MOTIVE_OPTIONS = [
 export default function MainDiary({ darkMode, onBack, initialView }) {
 	const didApplyInitialViewRef = useRef(false);
 	const editorRef = useRef(null);
+	const [openLoadMenuDiaryId, setOpenLoadMenuDiaryId] = useState(null);
 	const [text, setText] = useState("");
 	const [lastSavedChaptersJson, setLastSavedChaptersJson] = useState("[]");
 	const [lastSavedAt, setLastSavedAt] = useState(null);
@@ -431,6 +432,27 @@ export default function MainDiary({ darkMode, onBack, initialView }) {
 			window.removeEventListener("kicklog:diariesChanged", refresh);
 		};
 	}, []);
+
+	useEffect(() => {
+		if (!openLoadMenuDiaryId) return;
+		const onPointerDown = (e) => {
+			const t = e.target;
+			if (t && typeof t === "object" && t instanceof Element) {
+				// Click inside the menu should NOT close it.
+				if (t.closest?.('[data-kl-load-menu="true"]')) return;
+			}
+			setOpenLoadMenuDiaryId(null);
+		};
+		const onKeyDown = (e) => {
+			if (e.key === "Escape") setOpenLoadMenuDiaryId(null);
+		};
+		document.addEventListener("mousedown", onPointerDown);
+		document.addEventListener("keydown", onKeyDown);
+		return () => {
+			document.removeEventListener("mousedown", onPointerDown);
+			document.removeEventListener("keydown", onKeyDown);
+		};
+	}, [openLoadMenuDiaryId]);
 
 	useEffect(() => {
 		try {
@@ -936,6 +958,7 @@ export default function MainDiary({ darkMode, onBack, initialView }) {
 		if (!found) return;
 		const ok = window.confirm(`Delete diary “${found.name ?? "this diary"}”? This will remove its chapters and sessions.`);
 		if (!ok) return;
+		setOpenLoadMenuDiaryId(null);
 		clearSavedDiaryFromStorage({ createdAt: Number(id) || found.createdAt });
 		const next = loadDiaries();
 		setDiariesState(next);
@@ -1087,6 +1110,7 @@ export default function MainDiary({ darkMode, onBack, initialView }) {
 	};
 
 	const openLoadDiary = () => {
+		setOpenLoadMenuDiaryId(null);
 		setLoadFolderId("all");
 		setView("load");
 	};
@@ -1103,6 +1127,7 @@ export default function MainDiary({ darkMode, onBack, initialView }) {
 	const loadDiaryById = (id) => {
 		const found = diaries.find((d) => d.id === id);
 		if (!found) return;
+		setOpenLoadMenuDiaryId(null);
 		setSavedMeta(found);
 		setMeta(found);
 		setName(found.name ?? "");
@@ -1835,13 +1860,16 @@ export default function MainDiary({ darkMode, onBack, initialView }) {
 					overflow: auto;
 					padding-right: 2px;
 				}
+				.kl-loadRow {
+					display: block;
+				}
 				.kl-loadItem {
 					width: 100%;
 					border-radius: 16px;
 					border: 1px solid var(--kl-diary-stroke);
 					padding: 12px 12px;
 					font-weight: 900;
-					cursor: pointer;
+					cursor: default;
 					background: var(--kl-diary-surface);
 					color: var(--kl-diary-ink);
 					display: flex;
@@ -1849,11 +1877,90 @@ export default function MainDiary({ darkMode, onBack, initialView }) {
 					justify-content: space-between;
 					gap: 10px;
 				}
+				.kl-loadItemMain {
+					flex: 1 1 auto;
+					min-width: 0;
+					border: none;
+					background: transparent;
+					padding: 0;
+					margin: 0;
+					color: inherit;
+					font: inherit;
+					text-align: left;
+					cursor: pointer;
+				}
+				.kl-loadName {
+					display: block;
+					min-width: 0;
+					overflow: hidden;
+					text-overflow: ellipsis;
+					white-space: nowrap;
+				}
+				.kl-loadRight {
+					display: inline-flex;
+					align-items: center;
+					gap: 10px;
+					flex: 0 0 auto;
+				}
 				.kl-loadMeta {
 					font-weight: 800;
 					font-size: 12px;
 					opacity: 0.7;
 					white-space: nowrap;
+				}
+				.kl-loadMenuWrap {
+					position: relative;
+					flex: 0 0 auto;
+				}
+				.kl-loadMenuBtn {
+					border: 1px solid var(--kl-diary-stroke);
+					border-radius: 12px;
+					background: color-mix(in srgb, var(--kl-diary-surface) 88%, transparent);
+					color: color-mix(in srgb, var(--kl-diary-ink) 78%, var(--kl-diary-muted));
+					padding: 8px;
+					cursor: pointer;
+					line-height: 0;
+					display: grid;
+					place-items: center;
+				}
+				.kl-loadMenuBtn:hover {
+					background: color-mix(in srgb, var(--kl-diary-surface) 70%, var(--kl-diary-paper-a));
+					color: var(--kl-diary-ink);
+				}
+				.kl-loadMenu {
+					position: absolute;
+					right: 0;
+					top: calc(100% + 8px);
+					z-index: 50;
+					min-width: 160px;
+					padding: 6px;
+					border-radius: 14px;
+					border: 1px solid var(--kl-diary-stroke);
+					background: color-mix(in srgb, var(--kl-diary-surface) 92%, var(--kl-diary-paper-a));
+					box-shadow: 0 18px 44px rgba(0,0,0,0.22);
+					display: grid;
+					gap: 4px;
+				}
+				.kl-loadMenuItem {
+					width: 100%;
+					border: none;
+					background: transparent;
+					color: var(--kl-diary-ink);
+					font-weight: 850;
+					font-size: 13px;
+					padding: 10px 10px;
+					border-radius: 12px;
+					cursor: pointer;
+					text-align: left;
+				}
+				.kl-loadMenuItem:hover {
+					background: color-mix(in srgb, var(--kl-diary-ink) 10%, transparent);
+				}
+				.kl-loadMenuItemDanger {
+					color: color-mix(in srgb, #ef4444 78%, var(--kl-diary-ink));
+				}
+				.kl-loadMenuItemDanger:hover {
+					background: color-mix(in srgb, #ef4444 14%, transparent);
 				}
 				.kl-setup-row {
 					display: flex;
@@ -2438,46 +2545,85 @@ export default function MainDiary({ darkMode, onBack, initialView }) {
 											filteredDiaries.map((d) => (
 												<div
 													key={d.id}
-													style={{ display: "grid", gap: 8 }}
+													className="kl-loadRow"
 												>
-													<button
-														type="button"
-														className="kl-loadItem"
-														onClick={() => loadDiaryById(d.id)}
-														aria-label={`Load ${d.name}`}
-													>
-														<span style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-															{d.name}
-														</span>
-														<span className="kl-loadMeta">
-															{folderNameById(folders, d.folderId)} • {new Date(d.createdAt).toLocaleDateString()}
-														</span>
-													</button>
-													<div style={{ display: "flex", gap: 8, flexWrap: "wrap" }} aria-label={`Manage ${d.name}`}>
+													<div className="kl-loadItem" aria-label={`Diary ${d.name}`}>
 														<button
 															type="button"
-															className="kl-secondary"
-															onClick={() => renameDiaryById(d.id)}
-															aria-label={`Rename ${d.name}`}
+															className="kl-loadItemMain"
+															onClick={() => loadDiaryById(d.id)}
+															aria-label={`Load ${d.name}`}
 														>
-															Rename
+															<span className="kl-loadName" title={d.name}>
+																{d.name}
+															</span>
 														</button>
-														<button
-															type="button"
-															className="kl-secondary"
-															onClick={() => moveDiaryById(d.id)}
-															aria-label={`Move ${d.name}`}
-														>
-															Move
-														</button>
-														<button
-															type="button"
-															className="kl-dangerBtn"
-															onClick={() => deleteDiaryById(d.id)}
-															aria-label={`Delete ${d.name}`}
-														>
-															Delete
-														</button>
+
+														<div className="kl-loadRight">
+															<span className="kl-loadMeta">
+																{folderNameById(folders, d.folderId)} • {new Date(d.createdAt).toLocaleDateString()}
+															</span>
+
+															<div className="kl-loadMenuWrap" data-kl-load-menu="true">
+																<button
+																	type="button"
+																	className="kl-loadMenuBtn"
+																	onClick={(e) => {
+																		e.stopPropagation();
+																		setOpenLoadMenuDiaryId((prev) => (prev === d.id ? null : d.id));
+																	}}
+																	aria-label={`Open options for ${d.name}`}
+																	title="Options"
+																>
+																	<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+																		<circle cx="12" cy="5" r="1.8" fill="currentColor" />
+																		<circle cx="12" cy="12" r="1.8" fill="currentColor" />
+																		<circle cx="12" cy="19" r="1.8" fill="currentColor" />
+																	</svg>
+																</button>
+
+																{openLoadMenuDiaryId === d.id && (
+																	<div className="kl-loadMenu" role="menu" aria-label={`Options for ${d.name}`}>
+																		<button
+																			type="button"
+																			className="kl-loadMenuItem"
+																			onClick={() => {
+																			setOpenLoadMenuDiaryId(null);
+																			renameDiaryById(d.id);
+																		}}
+																		role="menuitem"
+																		aria-label={`Rename ${d.name}`}
+																	>
+																		Rename
+																	</button>
+																		<button
+																			type="button"
+																			className="kl-loadMenuItem"
+																			onClick={() => {
+																			setOpenLoadMenuDiaryId(null);
+																			moveDiaryById(d.id);
+																		}}
+																		role="menuitem"
+																		aria-label={`Move ${d.name}`}
+																	>
+																		Move
+																	</button>
+																		<button
+																			type="button"
+																			className="kl-loadMenuItem kl-loadMenuItemDanger"
+																			onClick={() => {
+																			setOpenLoadMenuDiaryId(null);
+																			deleteDiaryById(d.id);
+																		}}
+																		role="menuitem"
+																		aria-label={`Delete ${d.name}`}
+																	>
+																		Delete
+																	</button>
+																	</div>
+																)}
+															</div>
+														</div>
 													</div>
 												</div>
 										))

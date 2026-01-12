@@ -26,16 +26,16 @@ const SignInForm = ({ formData, onChange, onSubmit }) => (
   <form onSubmit={onSubmit} className="auth-form" aria-label="Sign in form">
     <h1 className="auth-title">Sign In</h1>
     
-    <div className="flex justify-center gap-3 mb-8">
+    <div className="flex justify-center gap-3">
       <SocialButton icon={FaGoogle} label="Google" />
       <SocialButton icon={FaFacebookF} label="Facebook" />
       <SocialButton icon={FaGithub} label="GitHub" />
       <SocialButton icon={FaLinkedinIn} label="LinkedIn" />
     </div>
     
-    <p className="auth-subtitle">or use your email password</p>
+    <p className="auth-subtitle">Or use your email password:</p>
     
-    <div className="space-y-4">
+    <div className="flex flex-col gap-2">
       <input
         type="email"
         name="email"
@@ -57,10 +57,10 @@ const SignInForm = ({ formData, onChange, onSubmit }) => (
     </div>
     
     <a href="#" className="auth-link">
-      Forget Your Password?
+      Forgot your password?
     </a>
     
-    <button type="submit" className="primary-btn mt-8">
+    <button type="submit" className="primary-btn">
       SIGN IN
     </button>
   </form>
@@ -73,16 +73,16 @@ const SignUpForm = ({ formData, onChange, onSubmit }) => (
   <form onSubmit={onSubmit} className="auth-form" aria-label="Sign up form">
     <h1 className="auth-title">Create Account</h1>
     
-    <div className="flex justify-center gap-3 mb-8">
+    <div className="flex justify-center gap-3">
       <SocialButton icon={FaGoogle} label="Google" />
       <SocialButton icon={FaFacebookF} label="Facebook" />
       <SocialButton icon={FaGithub} label="GitHub" />
       <SocialButton icon={FaLinkedinIn} label="LinkedIn" />
     </div>
     
-    <p className="auth-subtitle">or use your email for registration</p>
+    <p className="auth-subtitle">Or use your email for registration:</p>
     
-    <div className="space-y-4">
+    <div className="flex flex-col gap-2">
       <input
         type="text"
         name="username"
@@ -148,7 +148,7 @@ export default function AuthPage({ onLogin = () => {} }) {
   };
 
   return (
-    <div className="auth-root" style={{ minHeight: '100vh', position: 'relative' }}>
+    <div className="auth-root min-h-screen relative">
       <style>{`
         .auth-root {
           --kl-auth-bg: color-mix(in srgb, #ffffff 96%, var(--accent-green-soft, #bbf7d0) 4%);
@@ -160,14 +160,17 @@ export default function AuthPage({ onLogin = () => {} }) {
           --kl-auth-ease: var(--theme-ease, cubic-bezier(0.2, 0.8, 0.2, 1));
           --kl-auth-dur: var(--theme-dur, 820ms);
 
+          min-height: 100vh;
           width: 100%;
-          display: grid;
-          place-items: center;
+          display: flex;
+          align-items: center;
+          justify-content: center;
           padding: 24px;
           color: var(--kl-auth-fg);
           background: var(--kl-auth-bg);
           overflow: hidden;
           isolation: isolate;
+          position: relative;
         }
 
         .auth-root::before {
@@ -192,7 +195,11 @@ export default function AuthPage({ onLogin = () => {} }) {
             ),
             radial-gradient(
               560px 320px at 20% 102%,
-              color-mix(in srgb, color-mix(in srgb, var(--accent-green, #16a34a) 72%, var(--accent-green-soft, #bbf7d0)) 34%, transparent),
+              color-mix(
+                in srgb,
+                color-mix(in srgb, var(--accent-green, #16a34a) 72%, var(--accent-green-soft, #bbf7d0)) 34%,
+                transparent
+              ),
               transparent 66%
             );
         }
@@ -229,7 +236,7 @@ export default function AuthPage({ onLogin = () => {} }) {
           z-index: 1;
           animation: authEnter var(--kl-auth-dur) var(--kl-auth-ease) both;
         }
-        
+
         .purple-panel {
           background:
             radial-gradient(820px 420px at 0% 0%, color-mix(in srgb, var(--accent-green-soft, #bbf7d0) 42%, transparent), transparent 55%),
@@ -252,20 +259,20 @@ export default function AuthPage({ onLogin = () => {} }) {
           transition: transform var(--kl-auth-dur) var(--kl-auth-ease), border-radius var(--kl-auth-dur) var(--kl-auth-ease);
           order: 2;
         }
-        
+
         .purple-panel.shifted {
           transform: translateX(-122.22%);
           border-radius: 0 200px 200px 0;
           z-index: 5;
         }
-        
+
         .purple-panel h2 {
           font-size: 3.5rem;
           font-weight: 800;
           margin-bottom: 1.5rem;
           line-height: 1.1;
         }
-        
+
         .purple-panel p {
           font-size: 1rem;
           line-height: 1.6;
@@ -273,7 +280,7 @@ export default function AuthPage({ onLogin = () => {} }) {
           opacity: 0.95;
           max-width: 320px;
         }
-        
+
         .outline-btn {
           background: transparent;
           color: white;
@@ -287,13 +294,13 @@ export default function AuthPage({ onLogin = () => {} }) {
           cursor: pointer;
           transition: transform var(--kl-auth-dur) var(--kl-auth-ease), background-color var(--kl-auth-dur) var(--kl-auth-ease), color var(--kl-auth-dur) var(--kl-auth-ease);
         }
-        
+
         .outline-btn:hover {
           background: white;
           color: color-mix(in srgb, var(--accent-green, #16a34a) 70%, #0b1220);
           transform: translateY(-2px) scale(1.03);
         }
-        
+
         .form-panel {
           display: flex;
           align-items: center;
@@ -307,7 +314,7 @@ export default function AuthPage({ onLogin = () => {} }) {
         .form-panel form {
           width: min(100%, 360px);
         }
-        
+
         .form-panel.shifted {
           transform: translateX(82%);
         }
@@ -315,6 +322,7 @@ export default function AuthPage({ onLogin = () => {} }) {
         .auth-form {
           width: min(100%, 360px);
           padding: 0 24px;
+          --kl-auth-inline-gap: clamp(12px, 1.6vh, 16px);
           animation: authSwap 360ms var(--kl-auth-ease) both;
         }
 
@@ -332,8 +340,8 @@ export default function AuthPage({ onLogin = () => {} }) {
           color: var(--kl-auth-muted);
           font-weight: 900;
           letter-spacing: 0.01em;
-          margin: 0 0 18px;
-          text-align: center;
+          margin: 22px 0;
+          text-align: left;
         }
 
         .auth-link {
@@ -342,14 +350,18 @@ export default function AuthPage({ onLogin = () => {} }) {
           font-weight: 900;
           text-decoration: none;
           display: inline-block;
-          margin-top: 14px;
+          margin-top: var(--kl-auth-inline-gap);
           transition: color var(--kl-auth-dur) var(--kl-auth-ease);
+        }
+
+        .auth-link + .primary-btn {
+          margin-top: var(--kl-auth-inline-gap);
         }
 
         .auth-link:hover {
           color: color-mix(in srgb, var(--kl-auth-fg) 86%, var(--accent-green, #16a34a));
         }
-        
+
         .social-btn {
           width: 48px;
           height: 48px;
@@ -367,7 +379,7 @@ export default function AuthPage({ onLogin = () => {} }) {
           color: color-mix(in srgb, var(--kl-auth-fg) 62%, transparent);
           transition: color var(--kl-auth-dur) var(--kl-auth-ease);
         }
-        
+
         .social-btn:hover {
           background: color-mix(in srgb, var(--kl-auth-surface2) 80%, transparent);
           border-color: color-mix(in srgb, var(--accent-green, #16a34a) 36%, var(--kl-auth-stroke));
@@ -377,14 +389,14 @@ export default function AuthPage({ onLogin = () => {} }) {
         .social-btn:hover .social-icon {
           color: color-mix(in srgb, var(--accent-green, #16a34a) 70%, var(--kl-auth-fg));
         }
-        
+
         .form-input {
           width: 100%;
-          padding: 16px 20px;
+          padding: 10px 16px;
           border: 1px solid var(--kl-auth-stroke);
           background: color-mix(in srgb, var(--kl-auth-surface) 78%, transparent);
           border-radius: 12px;
-          font-size: 0.95rem;
+          font-size: 0.9rem;
           outline: none;
           color: var(--kl-auth-fg);
           font-weight: 800;
@@ -395,7 +407,7 @@ export default function AuthPage({ onLogin = () => {} }) {
           color: color-mix(in srgb, var(--kl-auth-muted) 90%, transparent);
           font-weight: 800;
         }
-        
+
         .form-input:focus {
           background: color-mix(in srgb, var(--kl-auth-surface2) 76%, transparent);
           border-color: color-mix(in srgb, var(--accent-green, #16a34a) 40%, var(--kl-auth-stroke));
@@ -403,7 +415,7 @@ export default function AuthPage({ onLogin = () => {} }) {
             0 0 0 3px color-mix(in srgb, var(--accent-green-soft, #bbf7d0) 55%, transparent),
             0 10px 30px rgba(0,0,0,0.14);
         }
-        
+
         .primary-btn {
           width: 100%;
           padding: 16px 24px;
@@ -426,7 +438,7 @@ export default function AuthPage({ onLogin = () => {} }) {
             0 18px 52px rgba(0, 0, 0, 0.30),
             0 0 0 1px rgba(22, 163, 74, 0.18);
         }
-        
+
         .primary-btn:hover {
           transform: translateY(-2px);
           box-shadow:
@@ -441,17 +453,13 @@ export default function AuthPage({ onLogin = () => {} }) {
           .auth-form { animation: none !important; }
           .auth-root::before { animation: none !important; }
           .purple-panel,
-          .form-panel {
-            transition: none !important;
-          }
+          .form-panel { transition: none !important; }
           .outline-btn,
           .social-btn,
           .primary-btn,
-          .form-input {
-            transition: none !important;
-          }
+          .form-input { transition: none !important; }
         }
-        
+
         @media (max-width: 968px) {
           .auth-container { grid-template-columns: 1fr; min-height: auto; }
           .purple-panel { border-radius: 0 0 200px 200px; transform: none !important; order: initial; }
@@ -474,7 +482,7 @@ export default function AuthPage({ onLogin = () => {} }) {
         </div>
       )}
 
-      <div style={{ position: 'relative', width: '100%', display: 'flex', justifyContent: 'center', zIndex: 1 }}>
+      <div className="relative w-full flex justify-center z-[1]">
         <div className="auth-container">
           <div className={`purple-panel ${isSignUpActive ? 'shifted' : ''}`}>
             <h2>{isSignUpActive ? 'Hello, Friend!' : 'Welcome Back!'}</h2>
