@@ -4,6 +4,7 @@ const STORAGE_KEY = "kicklog.diary.meta.v1";
 const DIARIES_KEY = "kicklog.diary.items.v1";
 const FOLDERS_KEY = "kicklog.diary.folders.v1";
 const ACTIVE_DIARY_KEY = "kicklog.diary.activeId.v1";
+const RECENT_DIARIES_KEY = "kicklog.diary.recent.v1";
 const ENTRIES_PREFIX = "kicklog.diary.entries.v1:";
 const ENTRY_SAVED_PREFIX = "kicklog.diary.entry.saved.v1:";
 const ENTRY_DRAFT_PREFIX = "kicklog.diary.entry.draft.v1:";
@@ -254,6 +255,21 @@ function safeParseJSON(raw, fallback) {
 		return JSON.parse(raw);
 	} catch {
 		return fallback;
+	}
+}
+
+function recordRecentDiary(diaryId) {
+	const id = String(diaryId ?? "").trim();
+	if (!id) return;
+	try {
+		const existing = safeParseJSON(window.localStorage.getItem(RECENT_DIARIES_KEY), []);
+		const list = Array.isArray(existing) ? existing : [];
+		const now = Date.now();
+		const next = [{ id, at: now }, ...list.filter((x) => x && typeof x === "object" && String(x.id) !== id)].slice(0, 12);
+		window.localStorage.setItem(RECENT_DIARIES_KEY, JSON.stringify(next));
+		window.dispatchEvent(new Event("kicklog:recentDiariesChanged"));
+	} catch {
+		// ignore
 	}
 }
 
@@ -843,6 +859,7 @@ export default function MainDiary({ darkMode, onBack, initialView }) {
 		try {
 			window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
 			window.localStorage.setItem(ACTIVE_DIARY_KEY, String(createdAt));
+			recordRecentDiary(String(createdAt));
 			window.localStorage.setItem(`${CHAPTERS_SAVED_PREFIX}${String(createdAt)}`, JSON.stringify([initialChapter]));
 			window.localStorage.setItem(`${ACTIVE_CHAPTER_PREFIX}${String(createdAt)}`, String(initialChapter.id));
 		} catch {
@@ -1063,6 +1080,7 @@ export default function MainDiary({ darkMode, onBack, initialView }) {
 		try {
 			window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
 			window.localStorage.setItem(ACTIVE_DIARY_KEY, String(next.createdAt));
+			recordRecentDiary(String(next.createdAt));
 			window.localStorage.setItem(`${CHAPTERS_SAVED_PREFIX}${String(next.createdAt)}`, JSON.stringify(nextChapters));
 			window.localStorage.setItem(`${ACTIVE_CHAPTER_PREFIX}${String(next.createdAt)}`, String(nextChapters[0].id));
 		} catch {
@@ -1144,6 +1162,7 @@ export default function MainDiary({ darkMode, onBack, initialView }) {
 		try {
 			window.localStorage.setItem(STORAGE_KEY, JSON.stringify(found));
 			window.localStorage.setItem(ACTIVE_DIARY_KEY, String(found.id));
+			recordRecentDiary(String(found.id));
 		} catch {
 			// ignore
 		}

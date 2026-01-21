@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import MainFolder from "./main_folder.jsx";
 import MainDiary from "./main_diary.jsx";
+import MainProfile from "./main_profile.jsx";
 
 export default function MainContent({
 	darkMode,
@@ -182,7 +183,9 @@ export default function MainContent({
 		);
 
 	const content =
-		activeKey === "diary" ? (
+		activeKey === "profile" ? (
+			<MainProfile darkMode={darkMode} />
+		) : activeKey === "diary" ? (
 			diaryContent
 		) : activeKey === "folder" ? (
 			<MainFolder darkMode={darkMode} />

@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaGoogle, FaFacebookF, FaGithub, FaLinkedinIn } from 'react-icons/fa';
+import axios from 'axios';
 
 /**
  * Custom Social Button component for reusability.
@@ -29,8 +30,6 @@ const SignInForm = ({ formData, onChange, onSubmit }) => (
     <div className="flex justify-center gap-3">
       <SocialButton icon={FaGoogle} label="Google" />
       <SocialButton icon={FaFacebookF} label="Facebook" />
-      <SocialButton icon={FaGithub} label="GitHub" />
-      <SocialButton icon={FaLinkedinIn} label="LinkedIn" />
     </div>
     
     <p className="auth-subtitle">Or use your email password:</p>
@@ -76,8 +75,6 @@ const SignUpForm = ({ formData, onChange, onSubmit }) => (
     <div className="flex justify-center gap-3">
       <SocialButton icon={FaGoogle} label="Google" />
       <SocialButton icon={FaFacebookF} label="Facebook" />
-      <SocialButton icon={FaGithub} label="GitHub" />
-      <SocialButton icon={FaLinkedinIn} label="LinkedIn" />
     </div>
     
     <p className="auth-subtitle">Or use your email for registration:</p>
@@ -140,11 +137,53 @@ export default function AuthPage({ onLogin = () => {} }) {
   // Function to handle form submission for login and registration
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError(''); setSuccess('');
-    // Demo-only: pretend success and redirect to main page
-    setSuccess(isSignUpActive ? "Signed up! Redirecting..." : "Signed in! Redirecting...");
-    triggerConfetti();
-    setTimeout(() => { onLogin(formData); navigate("/main"); }, 800);
+    setError('');
+    setSuccess('');
+
+    try {
+      let token;
+
+      if (isSignUpActive) {
+        const registerRes = await axios.post('http://localhost:5000/api/users/register', formData);
+        console.log('User registered successfully:', registerRes.data);
+        token = registerRes?.data?.token;
+
+        // If backend ever stops returning token on register, fall back to login.
+        if (!token) {
+          const loginRes = await axios.post('http://localhost:5000/api/users/login', {
+            email: formData.email,
+            password: formData.password,
+          });
+          console.log('Auto-login after register:', loginRes.data);
+          token = loginRes?.data?.token;
+        }
+      } else {
+        const loginRes = await axios.post('http://localhost:5000/api/users/login', {
+          email: formData.email,
+          password: formData.password,
+        });
+        console.log('User logged in successfully:', loginRes.data);
+        token = loginRes?.data?.token;
+      }
+
+      if (!token) {
+        throw new Error('Missing token from server response');
+      }
+
+      localStorage.setItem('token', token);
+
+      setSuccess(isSignUpActive ? 'Signed up! You are now signed in.' : 'Signed in! Redirecting...');
+      triggerConfetti();
+
+      setTimeout(() => {
+        onLogin(formData);
+        navigate('/main');
+      }, 400);
+    } catch (err) {
+      console.error('Auth error:', err);
+      const message = err?.response?.data?.message || err?.message || 'Authentication failed';
+      setError(message);
+    }
   };
 
   return (
@@ -471,17 +510,6 @@ export default function AuthPage({ onLogin = () => {} }) {
 
       {showConfetti && <div ref={confettiRef} className="fixed inset-0 pointer-events-none z-50 confetti" />}
 
-      {(error || success) && (
-        <div
-          className={`fixed px-6 py-3 rounded-xl font-bold text-sm transition-all duration-500 animate-notif-center pointer-events-none ${
-            error ? "bg-red-500/90 text-white border border-red-400" : "bg-green-500/90 text-white border border-green-400"
-          }`}
-          style={{ left: '50%', top: '30%', transform: "translateX(-50%)", minWidth: "280px", maxWidth: "90vw" }}
-        >
-          {error || success}
-        </div>
-      )}
-
       <div className="relative w-full flex justify-center z-[1]">
         <div className="auth-container">
           <div className={`purple-panel ${isSignUpActive ? 'shifted' : ''}`}>
@@ -501,11 +529,27 @@ export default function AuthPage({ onLogin = () => {} }) {
           </div>
 
           <div className={`form-panel ${isSignUpActive ? 'shifted' : ''}`}>
-            {!isSignUpActive ? (
-              <SignInForm key="signin" formData={formData} onChange={handleInputChange} onSubmit={handleSubmit} />
-            ) : (
-              <SignUpForm key="signup" formData={formData} onChange={handleInputChange} onSubmit={handleSubmit} />
-            )}
+            <div className="w-full flex flex-col items-center">
+              {!isSignUpActive ? (
+                <SignInForm key="signin" formData={formData} onChange={handleInputChange} onSubmit={handleSubmit} />
+              ) : (
+                <SignUpForm key="signup" formData={formData} onChange={handleInputChange} onSubmit={handleSubmit} />
+              )}
+
+              {(error || success) && (
+                <div
+                  className={`mt-4 w-full max-w-[360px] px-6 py-3 rounded-xl font-bold text-sm text-center border ${
+                    error
+                      ? "bg-red-500/10 text-red-700 border-red-300"
+                      : "bg-green-500/10 text-green-700 border-green-300"
+                  }`}
+                  role={error ? "alert" : "status"}
+                  aria-live={error ? "assertive" : "polite"}
+                >
+                  {error || success}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
