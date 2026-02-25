@@ -4,7 +4,7 @@ import {
 	FaBook,
 	FaFolder,
 	FaCalendar,
-	FaShieldAlt,
+	FaInfoCircle,
 	FaTrash,
 	FaTimes,
 } from "react-icons/fa";
@@ -83,11 +83,11 @@ export default function MainSidebar({
 	const [hoveredKey, setHoveredKey] = useState(null);
 
 	const menuItems = [
-		{ key: "profile", icon: FaUser, label: "Profile" },
 		{ key: "diary", icon: FaBook, label: "Diary" },
 		{ key: "folder", icon: FaFolder, label: "Diary Folder" },
 		{ key: "schedule", icon: FaCalendar, label: "Schedule" },
-		{ key: "privacy", icon: FaShieldAlt, label: "Privacy Policy" },
+		{ key: "profile", icon: FaUser, label: "Profile" },
+		{ key: "about", icon: FaInfoCircle, label: "About" },
 		{ key: "bin", icon: FaTrash, label: "Bin" },
 	];
 
@@ -275,7 +275,7 @@ export default function MainSidebar({
 			width: 44,
 			height: 26,
 			borderRadius: 999,
-			background: darkMode ? "#bbf7d0" : "#16a34a", // was darkMode ? "#16a34a" : "#bbf7d0"
+			background: darkMode ? "var(--accent-green-soft, #bbf7d0)" : "var(--accent-green, #16a34a)",
 			position: "relative",
 			flex: "0 0 auto",
 			boxShadow: "inset 0 0 0 1px rgba(0,0,0,0.06)",

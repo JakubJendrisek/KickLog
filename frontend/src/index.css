@@ -16,3 +16,31 @@ body {
   line-height: 1.4;
 }
 
+/* Consistent button interactions across the app */
+button:not(:disabled) {
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes kl-btn-press {
+    from { translate: 0 0; scale: 1; filter: brightness(1); }
+    to { translate: 0 1px; scale: 0.98; filter: brightness(0.98); }
+  }
+
+  button:not(:disabled) {
+    will-change: transform, filter;
+  }
+
+  button:not(:disabled):active {
+    animation: kl-btn-press 120ms ease-out;
+    translate: 0 1px;
+    scale: 0.98;
+    filter: brightness(0.98);
+  }
+}
+

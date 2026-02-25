@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import MainFolder from "./main_folder.jsx";
 import MainDiary from "./main_diary.jsx";
 import MainProfile from "./main_profile.jsx";
+import MainSchedule from "./main_schedule.jsx";
 
 export default function MainContent({
 	darkMode,
@@ -37,9 +38,194 @@ export default function MainContent({
 			diary: "Diary",
 			folder: "Diary Folder",
 			schedule: "Schedule",
-			privacy: "Privacy Policy",
+			about: "About",
 			bin: "Bin",
 		}[activeKey] ?? "Section";
+
+	const handleAboutCardMove = (e) => {
+		const el = e.currentTarget;
+		if (!el) return;
+		const rect = el.getBoundingClientRect();
+		const x = e.clientX - rect.left;
+		const y = e.clientY - rect.top;
+		el.style.setProperty("--mx", `${x}px`);
+		el.style.setProperty("--my", `${y}px`);
+		el.style.setProperty("--kl-ga", "1");
+	};
+
+	const handleAboutCardLeave = (e) => {
+		const el = e.currentTarget;
+		if (!el) return;
+		el.style.setProperty("--kl-ga", "0");
+	};
+
+	const aboutContent = (
+		<div
+			className="kl-about-root"
+			style={{
+				height: "100%",
+				width: "100%",
+				overflow: "auto",
+				padding: 8,
+				boxSizing: "border-box",
+			}}
+		>
+			<style>{`
+				.kl-about-root {
+					--kl-glow2: color-mix(
+						in srgb,
+						color-mix(in srgb, var(--accent-green, #16a34a) 72%, var(--accent-green-soft, #bbf7d0)) 84%,
+						transparent
+					);
+				}
+
+				/* Cursor-follow outline highlight (ported from WelcomePage cards) */
+				.kl-about-card {
+					--kl-ga: 0;
+					position: relative;
+					isolation: isolate;
+					overflow: hidden;
+					transform: translateZ(0);
+				}
+				.kl-about-card::before {
+					content: "";
+					position: absolute;
+					inset: 0;
+					border-radius: inherit;
+					padding: 3px;
+					background: radial-gradient(
+						190px circle at var(--mx, 50%) var(--my, 50%),
+						var(--kl-glow2) 0%,
+						transparent 58%
+					);
+					opacity: calc(var(--kl-ga, 0) * 1);
+					transition: opacity 260ms var(--theme-ease, cubic-bezier(0.2, 0.8, 0.2, 1));
+					pointer-events: none;
+					z-index: 0;
+					-webkit-mask:
+						linear-gradient(#000 0 0) content-box,
+						linear-gradient(#000 0 0);
+					-webkit-mask-composite: xor;
+					mask-composite: exclude;
+				}
+				.kl-about-card > * {
+					position: relative;
+					z-index: 1;
+				}
+
+				@media (prefers-reduced-motion: reduce) {
+					.kl-about-card::before { display: none; }
+				}
+			`}</style>
+
+			<div style={{ maxWidth: 860, margin: "0 auto", padding: "6px 6px 14px" }}>
+				<div
+					style={{
+						fontWeight: 950,
+						fontSize: 28,
+						lineHeight: 1.1,
+						letterSpacing: "-0.02em",
+						color: darkMode ? "rgba(255,255,255,0.94)" : "rgba(15,23,42,0.92)",
+						marginBottom: 10,
+					}}
+				>
+					About KickLog
+				</div>
+
+				<div
+					style={{
+						fontWeight: 700,
+						fontSize: 15,
+						lineHeight: 1.55,
+						color: darkMode ? "rgba(226,232,240,0.78)" : "rgba(71,85,105,0.92)",
+						marginBottom: 16,
+					}}
+				>
+					KickLog is a simple place to write things down, track your progress, and keep your head clear.
+					Use it as a daily diary, a training log, or a “reset button” when the day gets noisy.
+				</div>
+
+				<div
+					style={{
+						display: "grid",
+						gridTemplateColumns: "1fr",
+						gap: 12,
+					}}
+				>
+					{[
+						{
+							title: "How to use it",
+							items: [
+								"Start a new diary entry when something matters — big or small.",
+								"Be honest and short: a few lines is enough to build consistency.",
+								"Use titles, dates, and clear notes so you can find things later.",
+								"If you miss a day, don’t “catch up” — just continue from today.",
+							],
+						},
+						{
+							title: "Why you should use it",
+							items: [
+								"You remember patterns better when you write them down.",
+								"Small improvements compound — tracking makes that visible.",
+								"A log turns motivation into a plan and a plan into results.",
+							],
+						},
+						{
+							title: "A little motivation",
+							items: [
+								"You don’t need a perfect day — you need the next good decision.",
+								"Consistency beats intensity. Show up, even if it’s just one sentence.",
+								"Future you will thank you for leaving a trail.",
+							],
+						},
+					].map((block) => (
+						<div
+							key={block.title}
+							className="kl-about-card"
+							onMouseMove={handleAboutCardMove}
+							onMouseLeave={handleAboutCardLeave}
+							style={{
+								borderRadius: 18,
+								padding: 14,
+								border: "1px solid color-mix(in srgb, var(--kl-fg, #ffffff) 12%, transparent)",
+								background: darkMode
+									? "color-mix(in srgb, var(--kl-bg, #0b1220) 76%, transparent)"
+									: "color-mix(in srgb, #ffffff 92%, var(--accent-green-soft, #bbf7d0) 8%)",
+							}}
+						>
+							<div
+								style={{
+									fontWeight: 900,
+									fontSize: 15,
+									letterSpacing: "-0.01em",
+									color: darkMode ? "rgba(255,255,255,0.92)" : "rgba(15,23,42,0.92)",
+									marginBottom: 8,
+								}}
+							>
+								{block.title}
+							</div>
+							<ul style={{ margin: 0, paddingLeft: 18 }}>
+								{block.items.map((text) => (
+									<li
+										key={text}
+										style={{
+											margin: "6px 0",
+											fontWeight: 650,
+											fontSize: 14,
+											lineHeight: 1.5,
+											color: darkMode ? "rgba(226,232,240,0.82)" : "rgba(51,65,85,0.94)",
+										}}
+									>
+										{text}
+									</li>
+								))}
+							</ul>
+						</div>
+					))}
+				</div>
+			</div>
+		</div>
+	);
 
 	const diaryChooser = (
 		<div
@@ -189,6 +375,10 @@ export default function MainContent({
 			diaryContent
 		) : activeKey === "folder" ? (
 			<MainFolder darkMode={darkMode} />
+		) : activeKey === "schedule" ? (
+			<MainSchedule darkMode={darkMode} />
+		) : activeKey === "about" ? (
+			aboutContent
 		) : (
 			<div className="h-full w-full flex items-center justify-center text-center">
 				<div style={{ maxWidth: 520 }}>

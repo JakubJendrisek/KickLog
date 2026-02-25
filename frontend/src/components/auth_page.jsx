@@ -1,7 +1,8 @@
 import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaGoogle, FaFacebookF, FaGithub, FaLinkedinIn } from 'react-icons/fa';
+import { FaGoogle, FaFacebookF, FaArrowLeft } from 'react-icons/fa';
 import axios from 'axios';
+import PrivacyPolicyModal from './privacy_policy.jsx';
 
 /**
  * Custom Social Button component for reusability.
@@ -68,7 +69,7 @@ const SignInForm = ({ formData, onChange, onSubmit }) => (
 /**
  * The Sign Up Form Component.
  */
-const SignUpForm = ({ formData, onChange, onSubmit }) => (
+const SignUpForm = ({ formData, onChange, onSubmit, onOpenPrivacy, privacyAccepted }) => (
   <form onSubmit={onSubmit} className="auth-form" aria-label="Sign up form">
     <h1 className="auth-title">Create Account</h1>
     
@@ -108,10 +109,34 @@ const SignUpForm = ({ formData, onChange, onSubmit }) => (
         required
       />
     </div>
-    
-    <button type="submit" className="primary-btn mt-8">
-      SIGN UP
+
+    <button
+      type="button"
+      className="auth-legal auth-legal-link"
+      onClick={onOpenPrivacy}
+      aria-label="Open privacy policy"
+      title="Open privacy policy"
+    >
+      Privacy policy
+      {privacyAccepted ? <span aria-hidden="true"> ✓</span> : null}
     </button>
+    
+    <div className="auth-submit-wrap" data-disabled={!privacyAccepted}>
+      {!privacyAccepted ? (
+        <span className="auth-tooltip" role="tooltip">
+          First agree to the privacy policy
+        </span>
+      ) : null}
+
+      <button
+        type="submit"
+        className="primary-btn"
+        disabled={!privacyAccepted}
+        aria-disabled={!privacyAccepted}
+      >
+        SIGN UP
+      </button>
+    </div>
   </form>
 );
 
@@ -125,6 +150,8 @@ export default function AuthPage({ onLogin = () => {} }) {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [showConfetti, setShowConfetti] = useState(false);
+  const [privacyOpen, setPrivacyOpen] = useState(false);
+  const [privacyAccepted, setPrivacyAccepted] = useState(false);
   const navigate = useNavigate();
   const confettiRef = useRef(null);
 
@@ -139,6 +166,12 @@ export default function AuthPage({ onLogin = () => {} }) {
     e.preventDefault();
     setError('');
     setSuccess('');
+
+    if (isSignUpActive && !privacyAccepted) {
+      setError('Please confirm the privacy policy to create an account.');
+      setPrivacyOpen(true);
+      return;
+    }
 
     try {
       let token;
@@ -241,6 +274,47 @@ export default function AuthPage({ onLogin = () => {} }) {
               ),
               transparent 66%
             );
+        }
+
+        .auth-back-btn {
+          position: fixed;
+          top: 18px;
+          left: 18px;
+          width: 44px;
+          height: 44px;
+          border-radius: 9999px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          background: color-mix(in srgb, var(--kl-auth-surface) 88%, transparent);
+          border: 1.5px solid var(--kl-auth-stroke);
+          color: color-mix(in srgb, var(--kl-auth-fg) 84%, transparent);
+          -webkit-backdrop-filter: blur(10px);
+          backdrop-filter: blur(10px);
+          box-shadow: 0 16px 40px rgba(0,0,0,0.14);
+          cursor: pointer;
+          z-index: 60;
+          transition:
+            transform var(--kl-auth-dur) var(--kl-auth-ease),
+            background-color var(--kl-auth-dur) var(--kl-auth-ease),
+            border-color var(--kl-auth-dur) var(--kl-auth-ease),
+            box-shadow var(--kl-auth-dur) var(--kl-auth-ease),
+            color var(--kl-auth-dur) var(--kl-auth-ease);
+        }
+
+        .auth-back-btn:hover {
+          transform: translateY(-2px);
+          background: color-mix(in srgb, var(--kl-auth-surface2) 88%, transparent);
+          border-color: color-mix(in srgb, var(--accent-green, #16a34a) 30%, var(--kl-auth-stroke));
+          color: color-mix(in srgb, var(--accent-green, #16a34a) 68%, var(--kl-auth-fg));
+          box-shadow: 0 20px 56px rgba(0,0,0,0.18);
+        }
+
+        .auth-back-btn:focus-visible {
+          outline: none;
+          box-shadow:
+            0 0 0 3px color-mix(in srgb, var(--accent-green-soft, #bbf7d0) 60%, transparent),
+            0 20px 56px rgba(0,0,0,0.18);
         }
 
         @keyframes authPaneDrift {
@@ -401,6 +475,30 @@ export default function AuthPage({ onLogin = () => {} }) {
           color: color-mix(in srgb, var(--kl-auth-fg) 86%, var(--accent-green, #16a34a));
         }
 
+        .auth-legal {
+          margin: var(--kl-auth-inline-gap) 0;
+          font-size: 12px;
+          color: var(--kl-auth-muted);
+          font-weight: 900;
+          text-align: left;
+        }
+
+        .auth-legal-link {
+          background: transparent;
+          border: none;
+          padding: 0;
+          cursor: pointer;
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+        }
+
+        .auth-legal-link:hover {
+          color: color-mix(in srgb, var(--kl-auth-fg) 86%, var(--accent-green, #16a34a));
+          text-decoration: underline;
+          text-underline-offset: 3px;
+        }
+
         .social-btn {
           width: 48px;
           height: 48px;
@@ -487,6 +585,40 @@ export default function AuthPage({ onLogin = () => {} }) {
           filter: saturate(1.08);
         }
 
+        .auth-submit-wrap {
+          position: relative;
+        }
+
+        .auth-submit-wrap[data-disabled="true"] {
+          cursor: not-allowed;
+        }
+
+        .auth-tooltip {
+          position: absolute;
+          left: 50%;
+          bottom: calc(100% + 10px);
+          transform: translateX(-50%) translateY(4px);
+          opacity: 0;
+          pointer-events: none;
+          white-space: nowrap;
+          padding: 8px 10px;
+          border-radius: 999px;
+          border: 1px solid rgba(255,255,255,.18);
+          background: rgba(15,23,42,.92);
+          color: rgba(255,255,255,.92);
+          font-size: 12px;
+          font-weight: 900;
+          letter-spacing: 0.01em;
+          box-shadow: 0 18px 52px rgba(0,0,0,0.30);
+          transition: opacity var(--kl-auth-dur) var(--kl-auth-ease), transform var(--kl-auth-dur) var(--kl-auth-ease);
+          z-index: 5;
+        }
+
+        .auth-submit-wrap[data-disabled="true"]:hover .auth-tooltip {
+          opacity: 1;
+          transform: translateX(-50%) translateY(0);
+        }
+
         @media (prefers-reduced-motion: reduce) {
           .auth-container { animation: none !important; }
           .auth-form { animation: none !important; }
@@ -507,6 +639,22 @@ export default function AuthPage({ onLogin = () => {} }) {
           .form-panel.shifted { transform: none; }
         }
       `}</style>
+
+      <button
+        type="button"
+        className="auth-back-btn"
+        onClick={() => navigate('/welcome')}
+        aria-label="Back to welcome"
+        title="Back"
+      >
+        <FaArrowLeft size={18} aria-hidden="true" />
+      </button>
+
+      <PrivacyPolicyModal
+        open={privacyOpen}
+        onClose={() => setPrivacyOpen(false)}
+        onConfirm={() => setPrivacyAccepted(true)}
+      />
 
       {showConfetti && <div ref={confettiRef} className="fixed inset-0 pointer-events-none z-50 confetti" />}
 
@@ -533,7 +681,14 @@ export default function AuthPage({ onLogin = () => {} }) {
               {!isSignUpActive ? (
                 <SignInForm key="signin" formData={formData} onChange={handleInputChange} onSubmit={handleSubmit} />
               ) : (
-                <SignUpForm key="signup" formData={formData} onChange={handleInputChange} onSubmit={handleSubmit} />
+                <SignUpForm
+                  key="signup"
+                  formData={formData}
+                  onChange={handleInputChange}
+                  onSubmit={handleSubmit}
+                  onOpenPrivacy={() => setPrivacyOpen(true)}
+                  privacyAccepted={privacyAccepted}
+                />
               )}
 
               {(error || success) && (

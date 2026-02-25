@@ -1710,6 +1710,7 @@ export default function MainDiary({ darkMode, onBack, initialView }) {
 					border: 1px solid var(--kl-diary-stroke);
 					box-shadow: inset 0 0 0 1px var(--kl-diary-stroke-weak);
 					padding: 12px;
+					box-sizing: border-box;
 					overflow: auto;
 				}
 				.kl-pageTitle {
@@ -1867,6 +1868,8 @@ export default function MainDiary({ darkMode, onBack, initialView }) {
 					display: flex;
 					flex-direction: column;
 					gap: 12px;
+					flex: 1 1 auto;
+					min-height: 0;
 				}
 				.kl-loadFolders {
 					display: flex;
@@ -1878,6 +1881,9 @@ export default function MainDiary({ darkMode, onBack, initialView }) {
 					gap: 10px;
 					overflow: auto;
 					padding-right: 2px;
+					flex: 1 1 auto;
+					min-height: 0;
+					align-content: start;
 				}
 				.kl-loadRow {
 					display: block;
@@ -1892,7 +1898,7 @@ export default function MainDiary({ darkMode, onBack, initialView }) {
 					background: var(--kl-diary-surface);
 					color: var(--kl-diary-ink);
 					display: flex;
-					align-items: center;
+					align-items: flex-start;
 					justify-content: space-between;
 					gap: 10px;
 				}
@@ -1917,7 +1923,7 @@ export default function MainDiary({ darkMode, onBack, initialView }) {
 				}
 				.kl-loadRight {
 					display: inline-flex;
-					align-items: center;
+					align-items: flex-start;
 					gap: 10px;
 					flex: 0 0 auto;
 				}
@@ -1929,6 +1935,10 @@ export default function MainDiary({ darkMode, onBack, initialView }) {
 				}
 				.kl-loadMenuWrap {
 					position: relative;
+					display: flex;
+					flex-direction: column;
+					align-items: flex-end;
+					gap: 8px;
 					flex: 0 0 auto;
 				}
 				.kl-loadMenuBtn {
@@ -1947,10 +1957,7 @@ export default function MainDiary({ darkMode, onBack, initialView }) {
 					color: var(--kl-diary-ink);
 				}
 				.kl-loadMenu {
-					position: absolute;
-					right: 0;
-					top: calc(100% + 8px);
-					z-index: 50;
+					position: static;
 					min-width: 160px;
 					padding: 6px;
 					border-radius: 14px;
@@ -2522,7 +2529,17 @@ export default function MainDiary({ darkMode, onBack, initialView }) {
 					const renderLoad = () => (
 						<div className="kl-editorInner" aria-label="Load diary">
 							<div className="kl-pagesPattern" aria-hidden="true" />
-							<div className="kl-page" style={{ height: "100%", overflow: "auto" }}>
+							<div
+								className="kl-page"
+								style={{
+									height: "100%",
+									overflow: "hidden",
+									display: "flex",
+									flexDirection: "column",
+									minHeight: 0,
+									boxSizing: "border-box",
+								}}
+							>
 								<div className="kl-pageTitle">Choose a diary</div>
 								<div className="kl-load">
 									<div className="kl-loadFolders" aria-label="Folder filter">

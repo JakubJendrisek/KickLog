@@ -91,7 +91,7 @@ const loginUser = async (req, res) => {
 
     const isPasswordValid = await argon.verify(user.password_hash, password);
     if (!isPasswordValid) {
-      return res.status(401).json({ message: "Neplatné heslo" });
+      return res.status(401).json({ message: "Incorrect password" });
     }
 
     const token = signAccessToken(user);

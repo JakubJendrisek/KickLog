@@ -2,12 +2,71 @@ import React, { useEffect, useMemo, useState } from "react";
 import MainSidebar from "./main_sidebar.jsx";
 import MainContent from "./main_content.jsx";
 
+const THEME_STORAGE_KEY = "kicklog.theme.v1";
+const DEFAULT_THEME = { primary: "#16a34a", secondary: "#bbf7d0" };
+
+const TEXT_STORAGE_KEY = "kicklog.text.v1";
+const DEFAULT_TEXT_PREFS = { contrast: "normal", font: "default" }; // contrast: normal|high, font: default|mono
+
+function safeParseJSON(raw, fallback) {
+	try {
+		if (!raw) return fallback;
+		return JSON.parse(raw);
+	} catch {
+		return fallback;
+	}
+}
+
+function normalizeHex(value, fallback) {
+	const v = String(value || "").trim();
+	return /^#[0-9a-fA-F]{6}$/.test(v) ? v.toLowerCase() : fallback;
+}
+
+function hexToRgbTriplet(hex, fallbackTriplet) {
+	const v = normalizeHex(hex, "");
+	if (!v) return fallbackTriplet;
+	const r = Number.parseInt(v.slice(1, 3), 16);
+	const g = Number.parseInt(v.slice(3, 5), 16);
+	const b = Number.parseInt(v.slice(5, 7), 16);
+	if (![r, g, b].every((n) => Number.isFinite(n))) return fallbackTriplet;
+	return `${r},${g},${b}`;
+}
+
+function readStoredTheme() {
+	try {
+		const raw = window.localStorage.getItem(THEME_STORAGE_KEY);
+		const parsed = safeParseJSON(raw, null);
+		if (!parsed || typeof parsed !== "object") return DEFAULT_THEME;
+		return {
+			primary: normalizeHex(parsed.primary, DEFAULT_THEME.primary),
+			secondary: normalizeHex(parsed.secondary, DEFAULT_THEME.secondary),
+		};
+	} catch {
+		return DEFAULT_THEME;
+	}
+}
+
+function readStoredTextPrefs() {
+	try {
+		const raw = window.localStorage.getItem(TEXT_STORAGE_KEY);
+		const parsed = safeParseJSON(raw, null);
+		if (!parsed || typeof parsed !== "object") return DEFAULT_TEXT_PREFS;
+		const contrast = parsed.contrast === "high" ? "high" : "normal";
+		const font = parsed.font === "mono" ? "mono" : "default";
+		return { contrast, font };
+	} catch {
+		return DEFAULT_TEXT_PREFS;
+	}
+}
+
 export default function MainPage() {
 	// Layout shell: sidebar + empty content area (content comes later)
 	const [darkMode, setDarkMode] = useState(false);
-	const [activeKey, setActiveKey] = useState("profile");
+	const [activeKey, setActiveKey] = useState("diary");
 	const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 	const [lastNonDiaryKey, setLastNonDiaryKey] = useState("profile");
+	const [theme, setTheme] = useState(() => readStoredTheme());
+	const [textPrefs, setTextPrefs] = useState(() => readStoredTextPrefs());
 
 	const handleSelect = useMemo(() => {
 		return (nextKey) => {
@@ -31,8 +90,42 @@ export default function MainPage() {
 		};
 	}, [darkMode]);
 
+	useEffect(() => {
+		const refreshTheme = () => setTheme(readStoredTheme());
+		refreshTheme();
+		window.addEventListener("kicklog:themeChanged", refreshTheme);
+		window.addEventListener("storage", refreshTheme);
+		return () => {
+			window.removeEventListener("kicklog:themeChanged", refreshTheme);
+			window.removeEventListener("storage", refreshTheme);
+		};
+	}, []);
+
+	useEffect(() => {
+		const refreshText = () => setTextPrefs(readStoredTextPrefs());
+		refreshText();
+		window.addEventListener("kicklog:textChanged", refreshText);
+		window.addEventListener("storage", refreshText);
+		return () => {
+			window.removeEventListener("kicklog:textChanged", refreshText);
+			window.removeEventListener("storage", refreshText);
+		};
+	}, []);
+
+	useEffect(() => {
+		try {
+			const root = document.documentElement;
+			root.style.setProperty("--accent-green", theme.primary);
+			root.style.setProperty("--accent-green-soft", theme.secondary);
+			root.style.setProperty("--accent-green-rgb", hexToRgbTriplet(theme.primary, "22,163,74"));
+			root.style.setProperty("--accent-green-soft-rgb", hexToRgbTriplet(theme.secondary, "187,247,208"));
+		} catch {
+			// ignore
+		}
+	}, [theme]);
+
 	const transitionStyle = {
-		transitionProperty: "background-color, color, border-color, box-shadow",
+		transitionProperty: "background-color, color, border-color",
 		transitionDuration: "var(--theme-dur)",
 		transitionTimingFunction: "var(--theme-ease)",
 		willChange: "background-color, color",
@@ -42,6 +135,8 @@ export default function MainPage() {
 		<div
 			data-page="main"
 			data-theme={darkMode ? "dark" : "light"}
+			data-contrast={textPrefs?.contrast === "high" ? "high" : "normal"}
+			data-font={textPrefs?.font || "default"}
 			data-sidebar-collapsed={sidebarCollapsed ? "true" : "false"}
 			className={darkMode ? "min-h-screen bg-slate-950 text-white" : "min-h-screen bg-white text-slate-900"}
 			style={{
@@ -50,8 +145,8 @@ export default function MainPage() {
 				"--theme-ease": "cubic-bezier(0.2, 0.8, 0.2, 1)",
 				"--collapse-dur": "320ms", // NEW: sidebar collapse/expand animation speed
 				"--collapse-ease": "var(--theme-ease)",
-				"--accent-green": "#16a34a", // strong (emerald-600)
-				"--accent-green-soft": "#bbf7d0", // soft (emerald-200)
+				"--accent-green": theme.primary, // strong
+				"--accent-green-soft": theme.secondary, // soft
 				// Strong borders for panels + active item glow source
 				"--kl-sidebar-border-strong": darkMode
 					? "color-mix(in srgb, rgba(255,255,255,0.14) 74%, var(--accent-green-soft) 26%)"
@@ -60,16 +155,54 @@ export default function MainPage() {
 					? "color-mix(in srgb, rgba(255,255,255,0.12) 70%, var(--accent-green) 30%)"
 					: "color-mix(in srgb, #e5e7eb 70%, var(--accent-green-soft) 30%)",
 				"--kl-active-accent": "var(--kl-content-border-strong)",
-				"--kl-bg": darkMode ? "#0b1220" : "#ffffff",
+				"--kl-bg": darkMode
+					? "color-mix(in srgb, #0b1220 90%, var(--accent-green) 10%)"
+					: "color-mix(in srgb, #ffffff 96%, var(--accent-green-soft) 4%)",
 				"--kl-fg": darkMode ? "#ffffff" : "#0f172a",
+				"--kl-fg-rgb": darkMode ? "255,255,255" : "15,23,42",
+				// Contrast tuning: keep High noticeably crisper, and make Normal clearly softer.
+				"--kl-text-a": textPrefs?.contrast === "high" ? "0.99" : "0.84",
+				"--kl-text-strong-a": textPrefs?.contrast === "high" ? "1" : "0.93",
+				"--kl-text-muted-a": textPrefs?.contrast === "high" ? "0.90" : "0.58",
+				"--kl-text": "rgba(var(--kl-fg-rgb), var(--kl-text-a))",
+				"--kl-text-strong": "rgba(var(--kl-fg-rgb), var(--kl-text-strong-a))",
+				"--kl-text-muted": "rgba(var(--kl-fg-rgb), var(--kl-text-muted-a))",
+				"--kl-font-family":
+					textPrefs?.font === "mono"
+						? 'ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace'
+						: "inherit",
 				minHeight: "100vh",
-				background: darkMode ? "#0b1220" : "color-mix(in srgb, #ffffff 96%, var(--accent-green-soft) 4%)",
-				color: darkMode ? "#ffffff" : "#0f172a",
+				background: "var(--kl-bg)",
+				color: "var(--kl-text)",
+				fontFamily: "var(--kl-font-family)",
 				...transitionStyle,
 			}}
 		>
 			{/* Sync sidebar + rest of UI: same duration/ease everywhere (theme-related props only). */}
 			<style>{`
+				[data-page="main"] {
+					font-family: var(--kl-font-family, inherit);
+				}
+				[data-page="main"][data-font="mono"] {
+					font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+				}
+				[data-page="main"][data-contrast="high"] {
+					text-rendering: geometricPrecision;
+				}
+				[data-page="main"] .kl-muted {
+					color: var(--kl-text-muted);
+				}
+
+				/* Windows/Browser native <select> popup fix (dark mode): keep options readable */
+				[data-page="main"][data-theme="dark"] select {
+					color-scheme: light;
+				}
+				[data-page="main"][data-theme="dark"] select option,
+				[data-page="main"][data-theme="dark"] select optgroup {
+					color: rgba(15,23,42,0.92) !important;
+					background: rgba(255,255,255,0.98) !important;
+				}
+
 				/* Shared layout variables */
 				[data-page="main"] {
 					/* Matches MainContent wrapper padding: p-4 (16px), sm:p-5 (20px) */
@@ -198,39 +331,31 @@ export default function MainPage() {
 				/* Keep a single easing everywhere */
 				[data-page="main"],
 				[data-page="main"] aside[aria-label="Main sidebar"],
-				[data-page="main"] aside[aria-label="Main sidebar"] *,
 				[data-page="main"] main[aria-label="Main content"],
-				[data-page="main"] main[aria-label="Main content"] * {
+				[data-page="main"] main[aria-label="Main content"] {
 					transition-timing-function: var(--theme-ease) !important;
 				}
 
-				/* Sidebar CONTENT colors should follow THEME duration (synced with page) */
-				[data-page="main"] aside[aria-label="Main sidebar"] * {
-					transition-property: background-color, color, border-color, box-shadow, fill, stroke !important;
+				/* Theme transition: animate only the large containers (much cheaper than animating every child). */
+				[data-page="main"] aside[aria-label="Main sidebar"],
+				[data-page="main"] main[aria-label="Main content"] {
+					transition-property: background-color, color, border-color !important;
 					transition-duration: var(--theme-dur) !important;
-				}
-
-				/* Main content colors should follow THEME duration (synced with page) */
-				[data-page="main"] main[aria-label="Main content"],
-				[data-page="main"] main[aria-label="Main content"] * {
-					transition-property: background-color, color, border-color, box-shadow, fill, stroke !important;
-					transition-duration: var(--theme-dur) !important;
+					transition-timing-function: var(--theme-ease) !important;
 				}
 
 				/* Sidebar CONTAINER: width/transform use collapse duration; colors use theme duration */
 				[data-page="main"] aside[aria-label="Main sidebar"] {
-					transition-property: width, transform, background-color, color, border-color, box-shadow !important;
+					transition-property: width, transform, background-color, color, border-color !important;
 					transition-duration:
 						var(--collapse-dur),
 						var(--collapse-dur),
-						var(--theme-dur),
 						var(--theme-dur),
 						var(--theme-dur),
 						var(--theme-dur) !important;
 					transition-timing-function:
 						var(--collapse-ease),
 						var(--collapse-ease),
-						var(--theme-ease),
 						var(--theme-ease),
 						var(--theme-ease),
 						var(--theme-ease) !important;
@@ -275,9 +400,7 @@ export default function MainPage() {
 
 				@media (prefers-reduced-motion: reduce) {
 					[data-page="main"] aside[aria-label="Main sidebar"],
-					[data-page="main"] aside[aria-label="Main sidebar"] *,
-					[data-page="main"] main[aria-label="Main content"],
-					[data-page="main"] main[aria-label="Main content"] * {
+					[data-page="main"] main[aria-label="Main content"] {
 						transition-duration: 0ms !important;
 					}
 				}
