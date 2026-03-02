@@ -360,7 +360,13 @@ export default function MainFolder({ darkMode }) {
 							aria-label="Create folder"
 							className={[
 								"rounded-2xl px-6 py-3 font-extrabold",
-								newName.trim() ? "bg-emerald-600 text-white" : "bg-emerald-600/50 text-white/80 cursor-not-allowed",
+								newName.trim()
+									? darkMode
+										? "bg-[var(--accent-green-soft)] text-slate-900"
+										: "bg-[var(--accent-green)] text-white"
+									: darkMode
+										? "bg-[rgba(var(--accent-green-soft-rgb,187,247,208),0.50)] text-slate-900/80 cursor-not-allowed"
+										: "bg-[rgba(var(--accent-green-rgb,22,163,74),0.50)] text-white/80 cursor-not-allowed",
 							].join(" ")}
 						>
 							Create folder

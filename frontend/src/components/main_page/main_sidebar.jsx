@@ -575,7 +575,7 @@ export default function MainSidebar({
 								<span
 									className={[
 										"relative h-6 w-11 rounded-full transition",
-										darkMode ? "bg-emerald-200" : "bg-emerald-600",
+										darkMode ? "bg-[var(--accent-green-soft)]" : "bg-[var(--accent-green)]",
 									].join(" ")}
 								>
 									<span
@@ -610,7 +610,7 @@ export default function MainSidebar({
 						"absolute top-5 right-0 z-[60]",
 						"flex items-center justify-center leading-none size-5 rounded-full shadow-lg",
 						"ring-1 ring-black/10",
-						darkMode ? "bg-emerald-200 text-slate-900" : "bg-emerald-600 text-white",
+						darkMode ? "bg-[var(--accent-green-soft)] text-slate-900" : "bg-[var(--accent-green)] text-white",
 					].join(" ")}
 					style={{
 						transform: isCollapsed ? "translateX(calc(50% + var(--kl-content-pad, 16px)))" : "translateX(50%)",

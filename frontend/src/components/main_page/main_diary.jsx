@@ -1003,6 +1003,9 @@ export default function MainDiary({ darkMode, onBack, initialView }) {
 		const titleColor = "var(--kl-diary-title, rgba(255,255,255,0.92))";
 		const subColor = "var(--kl-diary-muted, rgba(226,232,240,0.78))";
 
+		const accentRgb = "var(--accent-green-rgb, 22,163,74)";
+		const accentSoftRgb = "var(--accent-green-soft-rgb, 187,247,208)";
+
 		const accentStrong = "var(--accent-green, #16a34a)";
 		const accentSoft = "var(--accent-green-soft, #bbf7d0)";
 		const spineA = themeKey === "soft" ? accentSoft : accentStrong;
@@ -1011,11 +1014,11 @@ export default function MainDiary({ darkMode, onBack, initialView }) {
 		const glow =
 			themeKey === "soft"
 				? darkMode
-					? "rgba(187,247,208,0.16)"
-					: "rgba(187,247,208,0.20)"
+					? `rgba(${accentSoftRgb},0.16)`
+					: `rgba(${accentSoftRgb},0.20)`
 				: darkMode
-					? "rgba(22,163,74,0.14)"
-					: "rgba(22,163,74,0.10)";
+					? `rgba(${accentRgb},0.14)`
+					: `rgba(${accentRgb},0.10)`;
 
 		const pagesPattern =
 			motiveKey === "lined"
@@ -2004,8 +2007,8 @@ export default function MainDiary({ darkMode, onBack, initialView }) {
 					color: var(--kl-diary-ink);
 				}
 				.kl-pill[data-active="true"] {
-					border-color: rgba(22,163,74,0.45);
-					box-shadow: 0 0 0 3px rgba(187,247,208,0.65);
+					border-color: rgba(var(--accent-green-rgb, 22,163,74),0.45);
+					box-shadow: 0 0 0 3px rgba(var(--accent-green-soft-rgb, 187,247,208),0.65);
 				}
 				.kl-input {
 					width: 100%;

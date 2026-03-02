@@ -469,7 +469,7 @@ export default function MainSchedule({ darkMode = false }) {
 				.kl-schedule-noticeLeft{display:flex;align-items:center;gap:10px;min-width:0}
 				.kl-schedule-noticeMsg{font-weight:900;font-size:13px;letter-spacing:-0.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 				.kl-schedule-noticeBtn{border:0;background:transparent;padding:6px;border-radius:999px;cursor:pointer}
-				.kl-schedule-noticeBtn:focus-visible{outline:none;box-shadow:0 0 0 3px rgba(187,247,208,0.45)}
+				.kl-schedule-noticeBtn:focus-visible{outline:none;box-shadow:0 0 0 3px rgba(var(--accent-green-soft-rgb, 187,247,208),0.45)}
 			`}</style>
 
 			<div
@@ -487,7 +487,7 @@ export default function MainSchedule({ darkMode = false }) {
 				<div className="kl-schedule-noticeLeft">
 					<IconCheck
 						className=""
-						style={{ width: 18, height: 18, color: darkMode ? "#bbf7d0" : "rgba(22,163,74,0.95)" }}
+						style={{ width: 18, height: 18, color: darkMode ? "var(--accent-green-soft)" : "var(--accent-green)" }}
 					/>
 					<div className="kl-schedule-noticeMsg">{toast.message}</div>
 				</div>
@@ -513,6 +513,8 @@ export default function MainSchedule({ darkMode = false }) {
 		const panelBg = darkMode ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.92)";
 		const fg = darkMode ? "rgba(255,255,255,0.92)" : "rgba(15,23,42,0.92)";
 		const muted = darkMode ? "rgba(226,232,240,0.70)" : "rgba(71,85,105,0.90)";
+		const accentRgb = "var(--accent-green-rgb, 22,163,74)";
+		const accentSoftRgb = "var(--accent-green-soft-rgb, 187,247,208)";
 
 		return (
 			<>
@@ -576,21 +578,21 @@ export default function MainSchedule({ darkMode = false }) {
 													border,
 													background: isSelected
 															? darkMode
-																? "rgba(187,247,208,0.12)"
-																: "rgba(22,163,74,0.12)"
+															? `rgba(${accentSoftRgb},0.12)`
+															: `rgba(${accentRgb},0.12)`
 														: hoveredISO === iso
 																? darkMode
-																	? "rgba(187,247,208,0.08)"
-																	: "rgba(22,163,74,0.08)"
+																? `rgba(${accentSoftRgb},0.08)`
+																: `rgba(${accentRgb},0.08)`
 															: "transparent",
 														boxShadow: isSelected
 															? darkMode
-																? "0 0 0 2px rgba(187,247,208,0.45)"
-																: "0 0 0 2px rgba(22,163,74,0.35)"
+															? `0 0 0 2px rgba(${accentSoftRgb},0.45)`
+															: `0 0 0 2px rgba(${accentRgb},0.35)`
 															: hoveredISO === iso
 																? darkMode
-																	? "0 0 0 2px rgba(187,247,208,0.18)"
-																	: "0 0 0 2px rgba(22,163,74,0.18)"
+																? `0 0 0 2px rgba(${accentSoftRgb},0.18)`
+																: `0 0 0 2px rgba(${accentRgb},0.18)`
 																: "none",
 													color: fg,
 													fontWeight: isSelected ? 950 : 800,
@@ -603,9 +605,20 @@ export default function MainSchedule({ darkMode = false }) {
 												}}
 											>
 												{date.getDate()}
-												{hasEvents && (
-													<span style={{ position: "absolute", bottom: 6, left: "50%", transform: "translateX(-50%)", width: 6, height: 6, borderRadius: 999, background: "rgba(22,163,74,0.95)" }} />
-												)}
+															{hasEvents && (
+																<span
+																	style={{
+																		position: "absolute",
+																		bottom: 6,
+																		left: "50%",
+																		transform: "translateX(-50%)",
+																		width: 6,
+																		height: 6,
+																		borderRadius: 999,
+																		background: darkMode ? `rgba(${accentSoftRgb},0.95)` : `rgba(${accentRgb},0.95)`,
+																	}}
+																/>
+															)}
 											</button>
 										);
 									})}
@@ -631,11 +644,11 @@ export default function MainSchedule({ darkMode = false }) {
 																							padding: "12px 12px",
 																							borderBottom: border,
 																							borderRadius: 14,
-																							background: isCompleted
-																								? darkMode
-																									? "rgba(187,247,208,0.06)"
-																									: "rgba(22,163,74,0.06)"
-																								: "transparent",
+																								background: isCompleted
+																									? darkMode
+																										? `rgba(${accentSoftRgb},0.06)`
+																										: `rgba(${accentRgb},0.06)`
+																									: "transparent",
 																								transition: "background 180ms ease",
 																						}}
 																					>
@@ -700,7 +713,19 @@ export default function MainSchedule({ darkMode = false }) {
 																											</div>
 																												<div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginTop: 2, opacity: isCompleted ? 0.55 : 1, transition: "opacity 180ms ease" }}>
 																													<div style={{ fontWeight: 850, fontSize: 12, color: muted }}>{e.time || ""}</div>
-																													<div style={{ padding: "4px 10px", borderRadius: 999, border, fontSize: 10, fontWeight: 950, letterSpacing: 0.7, textTransform: "uppercase", color: darkMode ? "rgba(187,247,208,0.92)" : "rgba(21,128,61,0.92)", background: darkMode ? "rgba(16,185,129,0.10)" : "rgba(16,185,129,0.08)" }}>
+																													<div
+																														style={{
+																															padding: "4px 10px",
+																															borderRadius: 999,
+																															border,
+																															fontSize: 10,
+																															fontWeight: 950,
+																															letterSpacing: 0.7,
+																															textTransform: "uppercase",
+																															color: darkMode ? `rgba(${accentSoftRgb},0.92)` : `rgba(${accentRgb},0.92)`,
+																															background: darkMode ? `rgba(${accentSoftRgb},0.10)` : `rgba(${accentRgb},0.08)`,
+																														}}
+																													>
 																														{categoryLabel(e.category)}
 																													</div>
 																												</div>
@@ -764,7 +789,7 @@ export default function MainSchedule({ darkMode = false }) {
 																		type="button"
 																		onClick={() => saveEdit(e.id)}
 																		aria-label="Save"
-																		style={{ width: 38, height: 38, borderRadius: 12, border, background: "rgba(22,163,74,0.14)", color: fg, fontWeight: 900, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+																		style={{ width: 38, height: 38, borderRadius: 12, border, background: `rgba(${accentRgb},0.14)`, color: fg, fontWeight: 900, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
 																	>
 																		<IconCheck style={{ width: 18, height: 18 }} />
 																	</button>
@@ -789,7 +814,7 @@ export default function MainSchedule({ darkMode = false }) {
 																													height: 38,
 																													borderRadius: 12,
 																													border,
-																													background: isCompleted ? (darkMode ? "#bbf7d0" : "#16a34a") : "rgba(255,255,255,0.04)",
+																													background: isCompleted ? (darkMode ? "var(--accent-green-soft)" : "var(--accent-green)") : "rgba(255,255,255,0.04)",
 																													color: isCompleted ? (darkMode ? "#0f172a" : "white") : fg,
 																													transition: "background 180ms ease, color 180ms ease",
 																													display: "flex",
@@ -850,7 +875,7 @@ export default function MainSchedule({ darkMode = false }) {
 															padding: "12px 16px",
 															borderRadius: 14,
 															border: 0,
-															background: darkMode ? "#bbf7d0" : "rgba(22,163,74,0.95)",
+																	background: darkMode ? "var(--accent-green-soft)" : "var(--accent-green)",
 															color: darkMode ? "#0f172a" : "white",
 															fontWeight: 950,
 															cursor: "pointer",
@@ -913,8 +938,10 @@ export default function MainSchedule({ darkMode = false }) {
 								onClick={goToday}
 								className={[
 									"px-3 py-2 rounded-full text-xs font-extrabold border",
-									darkMode ? "border-white/10 bg-emerald-500/15 hover:bg-emerald-500/25" : "border-emerald-200 bg-emerald-50 hover:bg-emerald-100",
-									darkMode ? "text-emerald-200" : "text-emerald-700",
+								darkMode
+									? "border-white/10 bg-[rgba(var(--accent-green-soft-rgb,187,247,208),0.14)] hover:bg-[rgba(var(--accent-green-soft-rgb,187,247,208),0.22)]"
+									: "border-[rgba(var(--accent-green-rgb,22,163,74),0.25)] bg-[rgba(var(--accent-green-rgb,22,163,74),0.10)] hover:bg-[rgba(var(--accent-green-rgb,22,163,74),0.14)]",
+								darkMode ? "text-[var(--accent-green-soft)]" : "text-[var(--accent-green)]",
 								].join(" ")}
 							>
 								Today
@@ -960,8 +987,8 @@ export default function MainSchedule({ darkMode = false }) {
 									const isSelected = iso === selectedISO;
 									const hasEvents = events.some((e) => e.date === iso);
 															const dayBase = darkMode
-																? "bg-white/0 hover:bg-emerald-200/10 hover:border-emerald-200/30 hover:text-emerald-100 hover:ring-2 hover:ring-emerald-200/20"
-																: "bg-white/0 hover:bg-emerald-50 hover:border-emerald-200 hover:text-emerald-700 hover:ring-2 hover:ring-emerald-600/15";
+																? "bg-white/0 hover:bg-[rgba(var(--accent-green-soft-rgb,187,247,208),0.10)] hover:border-[rgba(var(--accent-green-soft-rgb,187,247,208),0.25)] hover:text-[rgba(var(--accent-green-soft-rgb,187,247,208),0.95)] hover:ring-2 hover:ring-[rgba(var(--accent-green-soft-rgb,187,247,208),0.20)]"
+																: "bg-white/0 hover:bg-[rgba(var(--accent-green-rgb,22,163,74),0.08)] hover:border-[rgba(var(--accent-green-rgb,22,163,74),0.25)] hover:text-[rgba(var(--accent-green-rgb,22,163,74),0.95)] hover:ring-2 hover:ring-[rgba(var(--accent-green-rgb,22,163,74),0.18)]";
 
 									return (
 										<button
@@ -974,8 +1001,8 @@ export default function MainSchedule({ darkMode = false }) {
 												darkMode ? "border-white/10" : "border-slate-200",
 												isSelected
 													? darkMode
-																		? "bg-emerald-200/10 border-emerald-200/40 text-emerald-200 ring-2 ring-emerald-200/35"
-																		: "bg-emerald-50 border-emerald-200 text-emerald-700 ring-2 ring-emerald-600/20"
+														? "bg-[rgba(var(--accent-green-soft-rgb,187,247,208),0.12)] border-[rgba(var(--accent-green-soft-rgb,187,247,208),0.30)] text-[rgba(var(--accent-green-soft-rgb,187,247,208),0.95)] ring-2 ring-[rgba(var(--accent-green-soft-rgb,187,247,208),0.35)]"
+														: "bg-[rgba(var(--accent-green-rgb,22,163,74),0.10)] border-[rgba(var(--accent-green-rgb,22,163,74),0.25)] text-[rgba(var(--accent-green-rgb,22,163,74),0.95)] ring-2 ring-[rgba(var(--accent-green-rgb,22,163,74),0.20)]"
 													: textPrimary,
 											].join(" ")}
 											aria-label={iso}
@@ -985,7 +1012,7 @@ export default function MainSchedule({ darkMode = false }) {
 												<span
 													className={[
 														"absolute bottom-2 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full",
-														darkMode ? "bg-emerald-300" : "bg-emerald-600",
+															darkMode ? "bg-[var(--accent-green-soft)]" : "bg-[var(--accent-green)]",
 													].join(" ")}
 												/>
 											)}
@@ -998,7 +1025,7 @@ export default function MainSchedule({ darkMode = false }) {
 						<div className={["border-t lg:border-t-0 lg:border-l", darkMode ? "border-white/10" : "border-slate-200"].join(" ")}>
 							<div className={"h-full min-h-0 flex flex-col " + subPanelClasses}>
 								<div className="p-4 sm:p-5">
-									<div className={["text-base sm:text-lg font-extrabold tracking-tight", darkMode ? "text-emerald-200" : "text-emerald-700"].join(" ")}>{selectedLabel}</div>
+															<div className={["text-base sm:text-lg font-extrabold tracking-tight", darkMode ? "text-[var(--accent-green-soft)]" : "text-[var(--accent-green)]"].join(" ")}>{selectedLabel}</div>
 									<div className={["mt-1 text-xs font-semibold", textMuted].join(" ")}>Notes for the selected day</div>
 								</div>
 
@@ -1018,10 +1045,10 @@ export default function MainSchedule({ darkMode = false }) {
 																											"px-4 py-4 transition-colors",
 																											darkMode
 																												? isCompleted
-																														? "bg-emerald-200/5"
+																													? "bg-[rgba(var(--accent-green-soft-rgb,187,247,208),0.06)]"
 																														: "bg-white/0"
 																												: isCompleted
-																													? "bg-emerald-50"
+																												? "bg-[rgba(var(--accent-green-rgb,22,163,74),0.06)]"
 																												: "bg-white",
 																idx === 0 ? "" : darkMode ? "border-t border-white/10" : "border-t border-slate-200",
 														].join(" ")}
@@ -1096,7 +1123,9 @@ export default function MainSchedule({ darkMode = false }) {
 																														<div
 																															className={[
 																															"px-2.5 py-1 rounded-full border text-[10px] font-extrabold uppercase tracking-wider",
-																															darkMode ? "border-white/10 bg-emerald-500/10 text-emerald-200/90" : "border-slate-200 bg-emerald-50 text-emerald-700",
+																																darkMode
+																																? "border-[rgba(var(--accent-green-soft-rgb,187,247,208),0.24)] bg-[rgba(var(--accent-green-soft-rgb,187,247,208),0.10)] text-[rgba(var(--accent-green-soft-rgb,187,247,208),0.92)]"
+																																: "border-[rgba(var(--accent-green-rgb,22,163,74),0.25)] bg-[rgba(var(--accent-green-rgb,22,163,74),0.08)] text-[rgba(var(--accent-green-rgb,22,163,74),0.92)]",
 																														].join(" ")}
 																														>
 																															{categoryLabel(e.category)}
@@ -1148,7 +1177,9 @@ export default function MainSchedule({ darkMode = false }) {
 																		onClick={() => saveEdit(e.id)}
 																		className={[
 																		"w-9 h-9 rounded-lg border flex items-center justify-center text-xs font-extrabold transition",
-																		darkMode ? "border-emerald-400/20 bg-emerald-500/15 text-emerald-200 hover:bg-emerald-500/25" : "border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100",
+																			darkMode
+																			? "border-[rgba(var(--accent-green-soft-rgb,187,247,208),0.24)] bg-[rgba(var(--accent-green-soft-rgb,187,247,208),0.14)] text-[rgba(var(--accent-green-soft-rgb,187,247,208),0.92)] hover:bg-[rgba(var(--accent-green-soft-rgb,187,247,208),0.22)]"
+																			: "border-[rgba(var(--accent-green-rgb,22,163,74),0.25)] bg-[rgba(var(--accent-green-rgb,22,163,74),0.10)] text-[rgba(var(--accent-green-rgb,22,163,74),0.92)] hover:bg-[rgba(var(--accent-green-rgb,22,163,74),0.14)]",
 																	].join(" ")}
 																					aria-label="Save"
 																	>
@@ -1177,11 +1208,11 @@ export default function MainSchedule({ darkMode = false }) {
 																													"w-9 h-9 rounded-lg border flex items-center justify-center text-xs font-extrabold transition-colors",
 																														isCompleted
 																															? darkMode
-																																? "border-emerald-200 bg-emerald-200 text-slate-900 hover:bg-emerald-200/90"
-																																: "border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700"
+																																? "border-[rgba(var(--accent-green-soft-rgb,187,247,208),0.35)] bg-[var(--accent-green-soft)] text-slate-900 hover:bg-[rgba(var(--accent-green-soft-rgb,187,247,208),0.92)]"
+																																: "border-[rgba(var(--accent-green-rgb,22,163,74),0.40)] bg-[var(--accent-green)] text-white hover:bg-[rgba(var(--accent-green-rgb,22,163,74),0.92)]"
 																															: darkMode
-																															? "border-white/10 bg-white/5 text-slate-200 hover:bg-white/10 hover:border-emerald-200/30"
-																															: "border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 hover:border-emerald-200",
+																															? "border-white/10 bg-white/5 text-slate-200 hover:bg-white/10 hover:border-[rgba(var(--accent-green-soft-rgb,187,247,208),0.25)]"
+																															: "border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 hover:border-[rgba(var(--accent-green-rgb,22,163,74),0.25)]",
 																													].join(" ")}
 																												>
 																													<IconCheck className="w-4 h-4" />
@@ -1244,7 +1275,9 @@ export default function MainSchedule({ darkMode = false }) {
 										onClick={addMockEvent}
 										className={[
 											"px-5 py-3 rounded-xl font-extrabold shadow-sm transition",
-											darkMode ? "bg-emerald-200 hover:bg-emerald-200/90 text-slate-900" : "bg-emerald-600 hover:bg-emerald-700 text-white",
+										darkMode
+											? "bg-[var(--accent-green-soft)] hover:bg-[rgba(var(--accent-green-soft-rgb,187,247,208),0.92)] text-slate-900"
+											: "bg-[var(--accent-green)] hover:bg-[rgba(var(--accent-green-rgb,22,163,74),0.92)] text-white",
 										].join(" ")}
 									>
 										+ Add a new note
