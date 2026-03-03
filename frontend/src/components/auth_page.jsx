@@ -177,13 +177,13 @@ export default function AuthPage({ onLogin = () => {} }) {
       let token;
 
       if (isSignUpActive) {
-        const registerRes = await axios.post(`${import.meta.env.VITE_API_URL}api/users/register`, formData);
+        const registerRes = await axios.post(`${import.meta.env.VITE_API_URL}/api/users/register`, formData);
         console.log('User registered successfully:', registerRes.data);
         token = registerRes?.data?.token;
 
         // If backend ever stops returning token on register, fall back to login.
         if (!token) {
-          const loginRes = await axios.post(`${import.meta.env.VITE_API_URL}api/users/login`, {
+          const loginRes = await axios.post(`${import.meta.env.VITE_API_URL}/api/users/login`, {
             email: formData.email,
             password: formData.password,
           });
@@ -191,7 +191,7 @@ export default function AuthPage({ onLogin = () => {} }) {
           token = loginRes?.data?.token;
         }
       } else {
-        const loginRes = await axios.post(`${import.meta.env.VITE_API_URL}api/users/login`, {
+        const loginRes = await axios.post(`${import.meta.env.VITE_API_URL}/api/users/login`, {
           email: formData.email,
           password: formData.password,
         });
