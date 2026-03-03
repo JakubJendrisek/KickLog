@@ -175,30 +175,47 @@ export default function AuthPage({ onLogin = () => {} }) {
 
     try {
       let token;
+      const jsonConfig = {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      };
 
       if (isSignUpActive) {
-        const registerRes = await axios.post(`${import.meta.env.VITE_API_URL}/api/users/register`, {
-          email: formData.email,
-          username: formData.username,
-          password: formData.password,
-        });
+        const registerRes = await axios.post(
+          `${import.meta.env.VITE_API_URL}/api/users/register`,
+          {
+            email: formData.email,
+            username: formData.username,
+            password: formData.password,
+          },
+          jsonConfig
+        );
         console.log('User registered successfully:', registerRes.data);
         token = registerRes?.data?.token;
 
         // If backend ever stops returning token on register, fall back to login.
         if (!token) {
-          const loginRes = await axios.post(`${import.meta.env.VITE_API_URL}/api/users/login`, {
-            email: formData.email,
-            password: formData.password,
-          });
+          const loginRes = await axios.post(
+            `${import.meta.env.VITE_API_URL}/api/users/login`,
+            {
+              email: formData.email,
+              password: formData.password,
+            },
+            jsonConfig
+          );
           console.log('Auto-login after register:', loginRes.data);
           token = loginRes?.data?.token;
         }
       } else {
-        const loginRes = await axios.post(`${import.meta.env.VITE_API_URL}/api/users/login`, {
-          email: formData.email,
-          password: formData.password,
-        });
+        const loginRes = await axios.post(
+          `${import.meta.env.VITE_API_URL}/api/users/login`,
+          {
+            email: formData.email,
+            password: formData.password,
+          },
+          jsonConfig
+        );
         console.log('User logged in successfully:', loginRes.data);
         token = loginRes?.data?.token;
       }

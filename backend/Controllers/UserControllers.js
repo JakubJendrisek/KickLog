@@ -45,6 +45,7 @@ const registerUser = async (req, res) => {
       return res.status(400).json({
         message: "Chybí request body (zkontroluj, že posíláš JSON)",
         hint: "Pošli Content-Type: application/json a JSON body s email/username/password",
+        body: req.body,
       });
     }
 
@@ -74,7 +75,7 @@ const registerUser = async (req, res) => {
     res.status(201).json({ message: "Uživatel úspěšně zaregistrován", token, user });
   }
   catch (error) {
-    res.status(500).json({ message: 'Chyba při registraci uživatele', error: error.message });
+    res.status(500).json({ message: 'Chyba při registraci uživatele', error: error.message, body: req.body });
   }
 };
 
