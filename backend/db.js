@@ -9,11 +9,10 @@ const toBool = (value) => {
 };
 
 const env = {
-  connectionString: process.env.DATABASE_URL,
-  host: process.env.DATABASE_PUBLIC__URL,
+  connectionString: process.env.DATABASE_PUBLIC_URL,
   port: 5432,
   user: process.env.POSTGRES_USER,
-  password: process.env.DB_PASSWORD,
+  password: process.env.POSTGRES_PASSWORD,
   database: process.env.POSTGRES_DB,
 };
 
