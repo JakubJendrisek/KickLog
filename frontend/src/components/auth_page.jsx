@@ -177,7 +177,11 @@ export default function AuthPage({ onLogin = () => {} }) {
       let token;
 
       if (isSignUpActive) {
-        const registerRes = await axios.post(`${import.meta.env.VITE_API_URL}/api/users/register`, formData);
+        const registerRes = await axios.post(`${import.meta.env.VITE_API_URL}/api/users/register`, {
+          email: formData.email,
+          username: formData.username,
+          password: formData.password,
+        });
         console.log('User registered successfully:', registerRes.data);
         token = registerRes?.data?.token;
 

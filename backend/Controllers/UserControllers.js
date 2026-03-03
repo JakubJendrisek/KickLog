@@ -39,7 +39,14 @@ const signAccessToken = (user) => {
 
 const registerUser = async (req, res) => {
   try{
-    const { email, username, password } = req.body;
+    const { email, username, password } = req.body || {};
+
+    if (!req.body) {
+      return res.status(400).json({
+        message: "Chybí request body (zkontroluj, že posíláš JSON)",
+        hint: "Pošli Content-Type: application/json a JSON body s email/username/password",
+      });
+    }
 
     if (!email || !username || !password) {
       return res.status(400).json({ message: "Chybí email/username/password" });
@@ -73,7 +80,14 @@ const registerUser = async (req, res) => {
 
 const loginUser = async (req, res) => { 
   try {
-    const { email, password } = req.body;
+    const { email, password } = req.body || {};
+
+    if (!req.body) {
+      return res.status(400).json({
+        message: "Chybí request body (zkontroluj, že posíláš JSON)",
+        hint: "Pošli Content-Type: application/json a JSON body s email/password",
+      });
+    }
 
     if (!email || !password) {
       return res.status(400).json({ message: "Chybí email/password" });

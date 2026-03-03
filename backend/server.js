@@ -10,6 +10,8 @@ const userRouter = require('./Routes/UserRoute');
 app.use(cors()); 
 // Umožní serveru číst JSON data
 app.use(express.json()); 
+// Umožní serveru číst i form-urlencoded (např. HTML form / některé klienty)
+app.use(express.urlencoded({ extended: true }));
 
 app.use('/api/users', userRouter);
 
