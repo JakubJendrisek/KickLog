@@ -3,7 +3,7 @@ import MainSidebar from "./main_sidebar.jsx";
 import MainContent from "./main_content.jsx";
 
 const THEME_STORAGE_KEY = "kicklog.theme.v1";
-const DEFAULT_THEME = { primary: "#16a34a", secondary: "#bbf7d0" };
+const DEFAULT_THEME = { presetId: "default", primary: "#16a34a", secondary: "#bbf7d0" };
 
 const TEXT_STORAGE_KEY = "kicklog.text.v1";
 const DEFAULT_TEXT_PREFS = { contrast: "normal", font: "default" }; // contrast: normal|high, font: default|mono
@@ -37,7 +37,9 @@ function readStoredTheme() {
 		const raw = window.localStorage.getItem(THEME_STORAGE_KEY);
 		const parsed = safeParseJSON(raw, null);
 		if (!parsed || typeof parsed !== "object") return DEFAULT_THEME;
+		const presetId = typeof parsed.presetId === "string" ? parsed.presetId : DEFAULT_THEME.presetId;
 		return {
+			presetId,
 			primary: normalizeHex(parsed.primary, DEFAULT_THEME.primary),
 			secondary: normalizeHex(parsed.secondary, DEFAULT_THEME.secondary),
 		};
@@ -61,7 +63,7 @@ function readStoredTextPrefs() {
 
 export default function MainPage() {
 	// Layout shell: sidebar + empty content area (content comes later)
-	const [darkMode, setDarkMode] = useState(false);
+	const [darkMode, setDarkMode] = useState(true);
 	const [activeKey, setActiveKey] = useState("diary");
 	const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 	const [lastNonDiaryKey, setLastNonDiaryKey] = useState("profile");
@@ -92,11 +94,31 @@ export default function MainPage() {
 
 	useEffect(() => {
 		const refreshTheme = () => setTheme(readStoredTheme());
+
+		const handleThemeChanged = (event) => {
+			const incoming = event?.detail;
+			const nextPresetId = typeof incoming?.presetId === "string" ? incoming.presetId : "custom";
+			const nextPrimary = normalizeHex(incoming?.primary, "");
+			const nextSecondary = normalizeHex(incoming?.secondary, "");
+
+			if (nextPrimary && nextSecondary) {
+				setTheme((prev) => {
+					if (prev.primary === nextPrimary && prev.secondary === nextSecondary && prev.presetId === nextPresetId) {
+						return prev;
+					}
+					return { presetId: nextPresetId, primary: nextPrimary, secondary: nextSecondary };
+				});
+				return;
+			}
+
+			refreshTheme();
+		};
+
 		refreshTheme();
-		window.addEventListener("kicklog:themeChanged", refreshTheme);
+		window.addEventListener("kicklog:themeChanged", handleThemeChanged);
 		window.addEventListener("storage", refreshTheme);
 		return () => {
-			window.removeEventListener("kicklog:themeChanged", refreshTheme);
+			window.removeEventListener("kicklog:themeChanged", handleThemeChanged);
 			window.removeEventListener("storage", refreshTheme);
 		};
 	}, []);
@@ -135,6 +157,7 @@ export default function MainPage() {
 		<div
 			data-page="main"
 			data-theme={darkMode ? "dark" : "light"}
+			data-theme-preset={theme?.presetId || "custom"}
 			data-contrast={textPrefs?.contrast === "high" ? "high" : "normal"}
 			data-font={textPrefs?.font || "default"}
 			data-sidebar-collapsed={sidebarCollapsed ? "true" : "false"}
@@ -167,6 +190,16 @@ export default function MainPage() {
 				"--kl-text": "rgba(var(--kl-fg-rgb), var(--kl-text-a))",
 				"--kl-text-strong": "rgba(var(--kl-fg-rgb), var(--kl-text-strong-a))",
 				"--kl-text-muted": "rgba(var(--kl-fg-rgb), var(--kl-text-muted-a))",
+				"--kl-select-popup-bg": darkMode
+					? "color-mix(in srgb, var(--kl-bg) 88%, var(--accent-green-soft) 12%)"
+					: "color-mix(in srgb, #ffffff 88%, var(--accent-green-soft) 12%)",
+				"--kl-select-popup-fg": darkMode
+					? "color-mix(in srgb, #ffffff 92%, var(--accent-green-soft) 8%)"
+					: "color-mix(in srgb, #0f172a 94%, var(--accent-green) 6%)",
+				"--kl-select-popup-active-bg": darkMode
+					? "color-mix(in srgb, var(--accent-green) 44%, #0b1220 56%)"
+					: "color-mix(in srgb, var(--accent-green) 34%, #ffffff 66%)",
+				"--kl-select-popup-active-fg": darkMode ? "#ffffff" : "#0f172a",
 				"--kl-font-family":
 					textPrefs?.font === "mono"
 						? 'ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace'
@@ -193,14 +226,22 @@ export default function MainPage() {
 					color: var(--kl-text-muted);
 				}
 
-				/* Windows/Browser native <select> popup fix (dark mode): keep options readable */
+				/* Native <select> popup colors follow the selected profile motive. */
 				[data-page="main"][data-theme="dark"] select {
+					color-scheme: dark;
+				}
+				[data-page="main"][data-theme="light"] select {
 					color-scheme: light;
 				}
-				[data-page="main"][data-theme="dark"] select option,
-				[data-page="main"][data-theme="dark"] select optgroup {
-					color: rgba(15,23,42,0.92) !important;
-					background: rgba(255,255,255,0.98) !important;
+				[data-page="main"] select option,
+				[data-page="main"] select optgroup {
+					color: var(--kl-select-popup-fg) !important;
+					background: var(--kl-select-popup-bg) !important;
+				}
+				[data-page="main"] select option:checked,
+				[data-page="main"] select option:hover {
+					color: var(--kl-select-popup-active-fg) !important;
+					background: var(--kl-select-popup-active-bg) !important;
 				}
 
 				/* Shared layout variables */

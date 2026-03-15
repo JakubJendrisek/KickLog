@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import { moveFolderToBin } from "./bin_store.js";
 
 const FOLDERS_KEY = "kicklog.diary.folders.v1";
 const DIARIES_KEY = "kicklog.diary.items.v1";
@@ -112,10 +113,14 @@ export default function MainFolder({ darkMode }) {
 
 	const deleteFolder = (id) => {
 		const current = folders.find((f) => f.id === id);
-		const ok = window.confirm(`Delete folder "${current?.name ?? "this folder"}"?`);
+		const ok = window.confirm(`Move folder "${current?.name ?? "this folder"}" to Bin?`);
 		if (!ok) return;
+		const moved = moveFolderToBin(id);
+		if (!moved?.ok) {
+			window.alert("Could not move this folder to Bin. Please try again.");
+			return;
+		}
 		const next = folders.filter((f) => f.id !== id);
-		saveFolders(next);
 		setFolders(next);
 	};
 

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 
 const DIARIES_KEY = "kicklog.diary.items.v1";
 const ENTRIES_PREFIX = "kicklog.diary.entries.v1:";
@@ -320,6 +320,93 @@ function ProgressPulseCard() {
 	);
 }
 
+function ProfileSelect({ value, options, onChange, ariaLabel, minWidth = 220 }) {
+	const [open, setOpen] = useState(false);
+	const [openUpward, setOpenUpward] = useState(false);
+	const rootRef = useRef(null);
+
+	const selected = useMemo(() => {
+		const found = (options ?? []).find((option) => option.value === value);
+		return found || options?.[0] || { value: "", label: "Select" };
+	}, [options, value]);
+
+	useEffect(() => {
+		if (!open) return undefined;
+		const onPointerDown = (event) => {
+			if (!rootRef.current) return;
+			if (!rootRef.current.contains(event.target)) {
+				setOpen(false);
+			}
+		};
+		const onKeyDown = (event) => {
+			if (event.key === "Escape") {
+				setOpen(false);
+			}
+		};
+		window.addEventListener("mousedown", onPointerDown);
+		window.addEventListener("keydown", onKeyDown);
+		return () => {
+			window.removeEventListener("mousedown", onPointerDown);
+			window.removeEventListener("keydown", onKeyDown);
+		};
+	}, [open]);
+
+	const toggleOpen = () => {
+		setOpen((prev) => {
+			const nextOpen = !prev;
+			if (nextOpen && rootRef.current) {
+				const rect = rootRef.current.getBoundingClientRect();
+				const spaceBelow = window.innerHeight - rect.bottom;
+				const spaceAbove = rect.top;
+				setOpenUpward(spaceBelow < 230 && spaceAbove > spaceBelow);
+			}
+			return nextOpen;
+		});
+	};
+
+	return (
+		<div className="kl-selectWrap" ref={rootRef} data-open={open ? "true" : "false"} style={{ minWidth }}>
+			<button
+				type="button"
+				className="kl-selectTrigger"
+				onClick={toggleOpen}
+				aria-haspopup="listbox"
+				aria-expanded={open ? "true" : "false"}
+				aria-label={ariaLabel}
+			>
+				<span>{selected.label}</span>
+				<svg className="kl-selectChevron" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+					<path d="M3.5 5.5L8 10l4.5-4.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+				</svg>
+			</button>
+
+			{open ? (
+				<div
+					className={["kl-selectMenu", openUpward ? "is-upward" : ""].join(" ")}
+					role="listbox"
+					aria-label={`${ariaLabel} options`}
+				>
+					{(options ?? []).map((option) => (
+						<button
+							key={option.value}
+							type="button"
+							role="option"
+							aria-selected={value === option.value}
+							className={["kl-selectOption", value === option.value ? "is-active" : ""].join(" ")}
+							onClick={() => {
+								onChange(option.value);
+								setOpen(false);
+							}}
+						>
+							{option.label}
+						</button>
+					))}
+				</div>
+			) : null}
+		</div>
+	);
+}
+
 const loadDiaries = () => {
 	const list = safeParseJSON(window.localStorage.getItem(DIARIES_KEY), []);
 	if (!Array.isArray(list)) return [];
@@ -466,7 +553,15 @@ const applyThemeVars = (theme) => {
 		root.style.setProperty("--accent-green-soft", secondary);
 		root.style.setProperty("--accent-green-rgb", hexToRgbTriplet(primary, "22,163,74"));
 		root.style.setProperty("--accent-green-soft-rgb", hexToRgbTriplet(secondary, "187,247,208"));
-		window.dispatchEvent(new Event("kicklog:themeChanged"));
+		window.dispatchEvent(
+			new CustomEvent("kicklog:themeChanged", {
+				detail: {
+					primary: normalizeHex(primary, DEFAULT_THEME.primary),
+					secondary: normalizeHex(secondary, DEFAULT_THEME.secondary),
+					presetId: typeof theme?.presetId === "string" ? theme.presetId : "custom",
+				},
+			})
+		);
 	} catch {
 		// ignore
 	}
@@ -702,13 +797,35 @@ export default function MainProfile({ darkMode }) {
 				@media (min-width: 520px){.kl-settingsRow{grid-template-columns:160px 1fr}}
 				.kl-settingsLabel{font-weight:950;font-size:13px;opacity:.88}
 				.kl-settingsCtl{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end}
-				.kl-select{
-					border-radius:14px;border:1px solid rgba(15,23,42,.14);padding:11px 12px;font-weight:900;
-					outline:none;background:rgba(255,255,255,.75);color:rgba(15,23,42,.92);
-					min-width:220px;
+				.kl-selectWrap{position:relative;min-width:220px;z-index:8}
+				.kl-selectWrap[data-open="true"]{z-index:42}
+				.kl-selectTrigger{
+					width:100%;display:inline-flex;align-items:center;justify-content:space-between;gap:10px;
+					border-radius:16px;border:1px solid rgba(15,23,42,.14);padding:11px 12px;font-weight:900;
+					outline:none;background:rgba(255,255,255,.75);color:rgba(15,23,42,.92);cursor:pointer;
+					translate:0 0;transition:translate .2s cubic-bezier(.2,.8,.2,1), box-shadow .2s cubic-bezier(.2,.8,.2,1), border-color .2s cubic-bezier(.2,.8,.2,1)
 				}
-				.kl-prof-inner.dark .kl-select{border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:rgba(255,255,255,.92);color-scheme:light}
-				.kl-select option{color:rgba(15,23,42,.92);background:rgba(255,255,255,.98)}
+				.kl-selectTrigger:hover{translate:0 -1px;border-color:rgba(var(--accent-green-rgb, 22,163,74), .34);box-shadow:0 12px 24px rgba(15,23,42,.10)}
+				.kl-selectTrigger:focus{border-color:rgba(var(--accent-green-rgb, 22,163,74), .60);box-shadow:0 0 0 3px rgba(var(--accent-green-rgb, 22,163,74), .22)}
+				.kl-prof-inner.dark .kl-selectTrigger{border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:rgba(255,255,255,.92)}
+				.kl-selectChevron{flex:0 0 auto;width:14px;height:14px;opacity:.78;transition:transform .18s cubic-bezier(.2,.8,.2,1)}
+				.kl-selectTrigger[aria-expanded="true"] .kl-selectChevron{transform:rotate(180deg)}
+				.kl-selectMenu{
+					position:absolute;top:calc(100% + 8px);left:0;right:0;z-index:70;padding:6px;border-radius:20px;
+					border:1px solid rgba(15,23,42,.16);background:rgba(255,255,255,.94);box-shadow:0 18px 36px rgba(15,23,42,.24);
+					overflow:hidden;display:grid;gap:4px
+				}
+				.kl-selectMenu.is-upward{top:auto;bottom:calc(100% + 8px)}
+				.kl-prof-inner.dark .kl-selectMenu{border:1px solid rgba(255,255,255,.16);background:color-mix(in srgb, var(--kl-bg, #0b1220) 82%, var(--accent-green-soft) 18%);box-shadow:0 20px 40px rgba(0,0,0,.44)}
+				.kl-selectOption{
+					width:100%;border:0;border-radius:14px;background:transparent;padding:10px 12px;
+					text-align:left;font-size:14px;font-weight:850;color:rgba(15,23,42,.95);cursor:pointer;
+					transition:background-color .14s ease,color .14s ease
+				}
+				.kl-prof-inner.dark .kl-selectOption{color:rgba(255,255,255,.95)}
+				.kl-selectOption:hover{background:rgba(var(--accent-green-soft-rgb, 187,247,208), .36)}
+				.kl-selectOption.is-active{background:rgba(var(--accent-green-rgb, 22,163,74), .36);color:rgba(15,23,42,.98)}
+				.kl-prof-inner.dark .kl-selectOption.is-active{color:#fff}
 				.kl-swatch{width:18px;height:18px;border-radius:999px;border:1px solid rgba(255,255,255,.16);box-shadow:0 10px 24px rgba(0,0,0,.18)}
 				.kl-prof-inner:not(.dark) .kl-swatch{border:1px solid rgba(15,23,42,.12);box-shadow:0 10px 24px rgba(15,23,42,.10)}
 				.kl-color{width:42px;height:38px;border-radius:12px;border:1px solid rgba(255,255,255,.14);background:transparent;padding:0;cursor:pointer;overflow:hidden}
@@ -901,19 +1018,15 @@ export default function MainProfile({ darkMode }) {
 							<div className="kl-settingsRow" aria-label="Theme motive">
 								<div className="kl-settingsLabel">Choose motive</div>
 								<div className="kl-settingsCtl">
-									<select
-										className="kl-select"
+									<ProfileSelect
 										value={themeDraft.presetId || "custom"}
-										onChange={(e) => pickPreset(e.target.value)}
-										aria-label="Choose a theme preset"
-									>
-										{motives.map((m) => (
-											<option key={m.id} value={m.id}>
-												{m.name}
-											</option>
-										))}
-										<option value="custom">Custom</option>
-									</select>
+										onChange={(nextValue) => pickPreset(nextValue)}
+										ariaLabel="Choose a theme preset"
+										options={[
+											...motives.map((m) => ({ value: m.id, label: m.name })),
+											{ value: "custom", label: "Custom" },
+										]}
+									/>
 									<span className="kl-swatch" style={{ background: themeDraft.primary }} aria-hidden="true" />
 									<span className="kl-swatch" style={{ background: themeDraft.secondary }} aria-hidden="true" />
 								</div>
@@ -1036,19 +1149,19 @@ export default function MainProfile({ darkMode }) {
 							<div className="kl-settingsRow" aria-label="Font">
 								<div className="kl-settingsLabel">Font</div>
 								<div className="kl-settingsCtl">
-									<select
-										className="kl-select"
+									<ProfileSelect
 										value={textPrefs.font}
-										onChange={(e) => {
-											const next = { ...textPrefs, font: e.target.value };
+										onChange={(nextValue) => {
+											const next = { ...textPrefs, font: nextValue === "mono" ? "mono" : "default" };
 											setTextPrefs(next);
 											saveTextPrefs(next);
 										}}
-										aria-label="Choose font"
-									>
-										<option value="default">Default</option>
-										<option value="mono">Mono</option>
-									</select>
+										ariaLabel="Choose font"
+										options={[
+											{ value: "default", label: "Default" },
+											{ value: "mono", label: "Mono" },
+										]}
+									/>
 								</div>
 							</div>
 						</div>

@@ -4,6 +4,10 @@ import MainDiary from "./main_diary.jsx";
 import MainProfile from "./main_profile.jsx";
 import MainSchedule from "./main_schedule.jsx";
 import MainAbout from "./main_about.jsx";
+import MainBin from "./main_bin.jsx";
+
+const VIEW_EXIT_MS = 160;
+const VIEW_ENTER_MS = 280;
 
 export default function MainContent({
 	darkMode,
@@ -15,10 +19,51 @@ export default function MainContent({
 	// Tailwind detection (same idea as MainSidebar)
 	const twProbeRef = useRef(null);
 	const [twReady, setTwReady] = useState(false);
+	const [renderedKey, setRenderedKey] = useState(activeKey);
+	const [viewPhase, setViewPhase] = useState("idle");
+	const swapTimerRef = useRef(0);
+	const settleTimerRef = useRef(0);
+	const enterFrameRef = useRef(0);
 	useEffect(() => {
 		const el = twProbeRef.current;
 		if (!el) return;
 		setTwReady(window.getComputedStyle(el).display === "none");
+	}, []);
+
+	useEffect(() => {
+		if (activeKey === renderedKey) return undefined;
+
+		window.clearTimeout(swapTimerRef.current);
+		window.clearTimeout(settleTimerRef.current);
+		window.cancelAnimationFrame(enterFrameRef.current);
+
+		if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) {
+			setRenderedKey(activeKey);
+			setViewPhase("idle");
+			return undefined;
+		}
+
+		setViewPhase("exit");
+
+		swapTimerRef.current = window.setTimeout(() => {
+			setRenderedKey(activeKey);
+			setViewPhase("prep-enter");
+
+			enterFrameRef.current = window.requestAnimationFrame(() => {
+				setViewPhase("enter");
+				settleTimerRef.current = window.setTimeout(() => {
+					setViewPhase("idle");
+				}, VIEW_ENTER_MS);
+			});
+		}, VIEW_EXIT_MS);
+	}, [activeKey, renderedKey]);
+
+	useEffect(() => {
+		return () => {
+			window.clearTimeout(swapTimerRef.current);
+			window.clearTimeout(settleTimerRef.current);
+			window.cancelAnimationFrame(enterFrameRef.current);
+		};
 	}, []);
 
 	const transitionStyle = {
@@ -26,6 +71,27 @@ export default function MainContent({
 		transitionDuration: "var(--theme-dur)",
 		transitionTimingFunction: "var(--theme-ease)",
 		willChange: "background-color, color",
+	};
+
+	const contentStageStyle = {
+		position: "relative",
+		zIndex: 1,
+		height: "100%",
+		width: "100%",
+		opacity: viewPhase === "exit" || viewPhase === "prep-enter" ? 0 : 1,
+		transform:
+			viewPhase === "exit"
+				? "translate3d(0, 18px, 0) scale(0.985)"
+				: viewPhase === "prep-enter"
+					? "translate3d(0, 12px, 0) scale(0.992)"
+					: "translate3d(0, 0, 0) scale(1)",
+		transformOrigin: "50% 24px",
+		pointerEvents: viewPhase === "idle" || viewPhase === "enter" ? "auto" : "none",
+		transitionProperty: "opacity, transform",
+		transitionDuration: `${viewPhase === "exit" ? VIEW_EXIT_MS : VIEW_ENTER_MS}ms`,
+		transitionTimingFunction:
+			viewPhase === "exit" ? "cubic-bezier(0.4, 0, 1, 1)" : "cubic-bezier(0.22, 1, 0.36, 1)",
+		willChange: "opacity, transform",
 	};
 
 	const sectionTitle =
@@ -36,14 +102,14 @@ export default function MainContent({
 			schedule: "Schedule",
 			about: "About",
 			bin: "Bin",
-		}[activeKey] ?? "Section";
+		}[renderedKey] ?? "Section";
 
 	const diaryBackTarget = lastNonDiaryKey && lastNonDiaryKey !== "diary" ? lastNonDiaryKey : "profile";
 
 	const content =
-		activeKey === "profile" ? (
+		renderedKey === "profile" ? (
 			<MainProfile darkMode={darkMode} />
-		) : activeKey === "diary" ? (
+		) : renderedKey === "diary" ? (
 			<div style={{ height: "100%", width: "100%" }}>
 				<MainDiary
 					darkMode={darkMode}
@@ -51,11 +117,13 @@ export default function MainContent({
 					onBack={() => onNavigate?.(diaryBackTarget)}
 				/>
 			</div>
-		) : activeKey === "folder" ? (
+		) : renderedKey === "folder" ? (
 			<MainFolder darkMode={darkMode} />
-		) : activeKey === "schedule" ? (
+		) : renderedKey === "schedule" ? (
 			<MainSchedule darkMode={darkMode} />
-		) : activeKey === "about" ? (
+		) : renderedKey === "bin" ? (
+			<MainBin darkMode={darkMode} />
+		) : renderedKey === "about" ? (
 			<MainAbout darkMode={darkMode} />
 		) : (
 			<div className="h-full w-full flex items-center justify-center text-center">
@@ -110,7 +178,9 @@ export default function MainContent({
 						style={{ ...panelStyle, position: "relative", overflow: "hidden", isolation: "isolate" }}
 					>
 						<div style={{ position: "relative", zIndex: 1, height: "100%", width: "100%" }}>
-							{content}
+							<div style={contentStageStyle} data-view-phase={viewPhase}>
+								{content}
+							</div>
 						</div>
 					</main>
 				</div>
@@ -136,9 +206,14 @@ export default function MainContent({
 						"p-4 sm:p-5",
 					].join(" ")}
 					data-active={activeKey}
+					data-rendered={renderedKey}
 					data-sidebar-collapsed={sidebarCollapsed ? "true" : "false"}
 				>
-					<div className="relative z-[1] h-full w-full">{content}</div>
+					<div className="relative z-[1] h-full w-full">
+						<div style={contentStageStyle} data-view-phase={viewPhase}>
+							{content}
+						</div>
+					</div>
 				</main>
 			</div>
 		</>

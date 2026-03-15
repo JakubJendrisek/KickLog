@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { moveChapterToBin, moveDiaryToBin, moveSessionToBin } from "./bin_store.js";
 
 const STORAGE_KEY = "kicklog.diary.meta.v1";
 const DIARIES_KEY = "kicklog.diary.items.v1";
@@ -867,50 +868,6 @@ export default function MainDiary({ darkMode, onBack, initialView }) {
 		}
 	};
 
-	const clearSavedDiaryFromStorage = (metaToClear) => {
-		try {
-			// only clear STORAGE_KEY if it points to this diary
-			try {
-				const raw = window.localStorage.getItem(STORAGE_KEY);
-				if (raw) {
-					const parsed = JSON.parse(raw);
-					if (parsed && typeof parsed === "object" && String(parsed.createdAt) === String(metaToClear?.createdAt)) {
-						window.localStorage.removeItem(STORAGE_KEY);
-					}
-				}
-			} catch {
-				// ignore
-			}
-			// Clear active diary selection if it points to this diary.
-			try {
-				const active = window.localStorage.getItem(ACTIVE_DIARY_KEY);
-				if (active && String(active) === String(metaToClear?.createdAt)) {
-					window.localStorage.removeItem(ACTIVE_DIARY_KEY);
-				}
-			} catch {
-				// ignore
-			}
-			if (metaToClear?.createdAt) {
-				const id = String(metaToClear.createdAt);
-				window.localStorage.removeItem(`${ENTRY_SAVED_PREFIX}${id}`);
-				window.localStorage.removeItem(`${ENTRY_DRAFT_PREFIX}${id}`);
-				window.localStorage.removeItem(`${CHAPTERS_SAVED_PREFIX}${id}`);
-				window.localStorage.removeItem(`${CHAPTERS_DRAFT_PREFIX}${id}`);
-				window.localStorage.removeItem(`${ACTIVE_CHAPTER_PREFIX}${id}`);
-				window.localStorage.removeItem(entriesKey(id));
-			}
-			// keep DIARIES_KEY in sync
-			if (metaToClear?.createdAt) {
-				const id = String(metaToClear.createdAt);
-				const list = loadDiaries();
-				const next = list.filter((d) => d.id !== id);
-				saveDiaries(next);
-			}
-		} catch {
-			// ignore
-		}
-	};
-
 	const renameDiaryById = (id) => {
 		const found = diaries.find((d) => d.id === id);
 		if (!found) return;
@@ -973,10 +930,14 @@ export default function MainDiary({ darkMode, onBack, initialView }) {
 	const deleteDiaryById = (id) => {
 		const found = diaries.find((d) => d.id === id);
 		if (!found) return;
-		const ok = window.confirm(`Delete diary “${found.name ?? "this diary"}”? This will remove its chapters and sessions.`);
+		const ok = window.confirm(`Move diary "${found.name ?? "this diary"}" to Bin? You can restore it later.`);
 		if (!ok) return;
 		setOpenLoadMenuDiaryId(null);
-		clearSavedDiaryFromStorage({ createdAt: Number(id) || found.createdAt });
+		const moved = moveDiaryToBin(id);
+		if (!moved?.ok) {
+			window.alert("Could not move this diary to Bin. Please try again.");
+			return;
+		}
 		const next = loadDiaries();
 		setDiariesState(next);
 		// If current diary was deleted, return to Load screen.
@@ -1026,6 +987,8 @@ export default function MainDiary({ darkMode, onBack, initialView }) {
 				: motiveKey === "grid"
 					? "repeating-linear-gradient(0deg, var(--kl-diary-rule-strong) 0px, var(--kl-diary-rule-strong) 1px, transparent 1px, transparent 28px), repeating-linear-gradient(90deg, var(--kl-diary-rule-soft) 0px, var(--kl-diary-rule-soft) 1px, transparent 1px, transparent 28px)"
 					: "none";
+		const listPatternOpacity = motiveKey === "clean" ? 0 : darkMode ? 0.24 : 0.18;
+		const listCardShadow = darkMode ? "0 16px 34px rgba(2,6,23,0.30)" : "0 16px 34px rgba(15,23,42,0.10)";
 
 		return {
 			coverBg,
@@ -1036,6 +999,8 @@ export default function MainDiary({ darkMode, onBack, initialView }) {
 			spineB,
 			glow,
 			pagesPattern,
+			listPatternOpacity,
+			listCardShadow,
 		};
 	}, [darkMode, motiveKey, themeKey]);
 
@@ -1181,8 +1146,13 @@ export default function MainDiary({ darkMode, onBack, initialView }) {
 
 	const deleteSession = () => {
 		if (!activeEntry) return;
-		const ok = window.confirm("Delete this session?");
+		const ok = window.confirm("Move this session to Bin?");
 		if (!ok) return;
+		const moved = moveSessionToBin({ diaryId: String(meta?.createdAt ?? ""), entry: activeEntry });
+		if (!moved?.ok) {
+			window.alert("Could not move this session to Bin. Please try again.");
+			return;
+		}
 		setEntries((prev) => prev.filter((e) => e.id !== activeEntry.id));
 		setActiveEntryId((prevId) => {
 			if (prevId !== activeEntry.id) return prevId;
@@ -1262,8 +1232,13 @@ export default function MainDiary({ darkMode, onBack, initialView }) {
 
 	const deleteChapter = () => {
 		if (!activeChapter) return;
-		const ok = window.confirm(`Delete chapter “${activeChapter.title}”?`);
+		const ok = window.confirm(`Move chapter "${activeChapter.title}" to Bin?`);
 		if (!ok) return;
+		const moved = moveChapterToBin({ diaryId: String(meta?.createdAt ?? ""), chapter: activeChapter });
+		if (!moved?.ok) {
+			window.alert("Could not move this chapter to Bin. Please try again.");
+			return;
+		}
 		setChapters((prev) => {
 			const next = prev.filter((c) => c.id !== activeChapter.id);
 			if (next.length === 0) {
@@ -1285,6 +1260,9 @@ export default function MainDiary({ darkMode, onBack, initialView }) {
 				.kl-diary-root {
 					height: 100%;
 					width: 100%;
+					--kl-list-motive-pattern: ${styles.pagesPattern};
+					--kl-list-motive-opacity: ${styles.listPatternOpacity};
+					--kl-list-surface-shadow: ${styles.listCardShadow};
 				}
 				.kl-diary-root[data-theme="dark"] {
 					--kl-diary-cover: color-mix(in srgb, var(--kl-bg, #0b1220) 92%, #000000);
@@ -1396,36 +1374,119 @@ export default function MainDiary({ darkMode, onBack, initialView }) {
 				}
 				.kl-select {
 					width: 100%;
-					border-radius: 12px;
-					border: 1px solid var(--kl-diary-stroke);
-					background: color-mix(in srgb, var(--kl-diary-paper-a) 70%, transparent);
+					border-radius: 16px;
+					border: 1px solid color-mix(in srgb, var(--kl-diary-stroke) 84%, var(--accent-green-soft, #bbf7d0) 16%);
+					background:
+						linear-gradient(
+							180deg,
+							color-mix(in srgb, var(--kl-diary-paper-a) 82%, transparent),
+							color-mix(in srgb, var(--kl-diary-surface) 82%, transparent)
+						),
+						linear-gradient(45deg, transparent 50%, color-mix(in srgb, var(--kl-diary-muted) 95%, transparent) 50%),
+						linear-gradient(135deg, color-mix(in srgb, var(--kl-diary-muted) 95%, transparent) 50%, transparent 50%);
+					background-position:
+						0 0,
+						calc(100% - 18px) calc(50% - 3px),
+						calc(100% - 12px) calc(50% - 3px);
+					background-size: 100% 100%, 6px 6px, 6px 6px;
+					background-repeat: no-repeat;
+					appearance: none;
+					-webkit-appearance: none;
+					-moz-appearance: none;
 					color: var(--kl-diary-ink);
 					font-weight: 850;
-					padding: 10px 10px;
+					padding: 11px 40px 11px 12px;
 					outline: none;
+					box-shadow: 0 10px 24px rgba(0,0,0,0.10);
+					transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
 				}
-				.kl-chaptersList {
-					padding: 10px;
+				.kl-select:hover {
+					border-color: color-mix(in srgb, var(--accent-green, #16a34a) 36%, var(--kl-diary-stroke));
+				}
+				.kl-select:focus {
+					border-color: color-mix(in srgb, var(--accent-green, #16a34a) 58%, var(--kl-diary-stroke));
+					box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-green-soft, #bbf7d0) 64%, transparent);
+				}
+				.kl-diary-root[data-theme="dark"] .kl-select {
+					color-scheme: dark;
+				}
+				.kl-diary-root[data-theme="light"] .kl-select {
+					color-scheme: light;
+				}
+				.kl-diary-root .kl-select option,
+				.kl-diary-root .kl-select optgroup {
+					color: color-mix(in srgb, var(--kl-diary-ink) 95%, transparent);
+					background: color-mix(in srgb, var(--kl-diary-paper-a) 90%, var(--accent-green-soft, #bbf7d0) 10%);
+				}
+				.kl-chaptersList,
+				.kl-loadList {
+					position: relative;
+					padding: 12px;
 					overflow: auto;
 					display: grid;
-					gap: 8px;
+					gap: 10px;
 					min-height: 0;
+					border-radius: 20px;
+					border: 1px solid color-mix(in srgb, var(--kl-diary-stroke) 82%, var(--accent-green-soft, #bbf7d0) 18%);
+					background:
+						linear-gradient(
+							180deg,
+							color-mix(in srgb, var(--kl-diary-surface) 90%, transparent),
+							color-mix(in srgb, var(--kl-diary-surface-2) 88%, transparent)
+						);
+					box-shadow: inset 0 0 0 1px var(--kl-diary-stroke-weak), var(--kl-list-surface-shadow);
+					isolation: isolate;
+				}
+				.kl-chaptersList::before,
+				.kl-loadList::before {
+					content: "";
+					position: absolute;
+					inset: 0;
+					border-radius: inherit;
+					pointer-events: none;
+					background: var(--kl-list-motive-pattern);
+					opacity: var(--kl-list-motive-opacity);
+				}
+				.kl-chaptersList > *,
+				.kl-loadList > * {
+					position: relative;
+					z-index: 1;
 				}
 				.kl-chapterItem {
 					width: 100%;
 					text-align: left;
-					border-radius: 14px;
-					border: 1px solid var(--kl-diary-stroke);
-					background: var(--kl-diary-surface-2);
-					padding: 10px;
+					border-radius: 18px;
+					border: 1px solid color-mix(in srgb, var(--kl-diary-stroke) 84%, var(--accent-green-soft, #bbf7d0) 16%);
+					background:
+						linear-gradient(
+							180deg,
+							color-mix(in srgb, var(--kl-diary-surface-2) 94%, transparent),
+							color-mix(in srgb, var(--kl-diary-surface) 78%, transparent)
+						);
+					padding: 11px 12px;
 					cursor: pointer;
 					color: var(--kl-diary-ink);
 					display: grid;
 					gap: 4px;
+					box-shadow: 0 10px 24px rgba(0,0,0,0.12);
+					transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+				}
+				.kl-chapterItem:hover {
+					transform: translateY(-1px);
+					border-color: color-mix(in srgb, var(--accent-green, #16a34a) 42%, var(--kl-diary-stroke));
+					box-shadow: 0 16px 28px rgba(0,0,0,0.16);
 				}
 				.kl-chapterItem[data-active="true"] {
-					border-color: color-mix(in srgb, var(--accent-green, #16a34a) 55%, var(--kl-diary-stroke));
-					box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-green-soft, #bbf7d0) 60%, transparent);
+					border-color: color-mix(in srgb, var(--accent-green, #16a34a) 62%, var(--kl-diary-stroke));
+					background:
+						linear-gradient(
+							180deg,
+							color-mix(in srgb, var(--accent-green-soft, #bbf7d0) 30%, var(--kl-diary-surface-2)),
+							color-mix(in srgb, var(--accent-green-soft, #bbf7d0) 14%, var(--kl-diary-surface))
+						);
+					box-shadow:
+						0 0 0 3px color-mix(in srgb, var(--accent-green-soft, #bbf7d0) 60%, transparent),
+						0 18px 32px rgba(0,0,0,0.16);
 				}
 				.kl-chapterTitle {
 					font-weight: 950;
@@ -1880,12 +1941,8 @@ export default function MainDiary({ darkMode, onBack, initialView }) {
 					flex-wrap: wrap;
 				}
 				.kl-loadList {
-					display: grid;
-					gap: 10px;
-					overflow: auto;
-					padding-right: 2px;
 					flex: 1 1 auto;
-					min-height: 0;
+					padding-right: 4px;
 					align-content: start;
 				}
 				.kl-loadRow {
@@ -1893,17 +1950,29 @@ export default function MainDiary({ darkMode, onBack, initialView }) {
 				}
 				.kl-loadItem {
 					width: 100%;
-					border-radius: 16px;
-					border: 1px solid var(--kl-diary-stroke);
-					padding: 12px 12px;
+					border-radius: 18px;
+					border: 1px solid color-mix(in srgb, var(--kl-diary-stroke) 80%, var(--accent-green-soft, #bbf7d0) 20%);
+					padding: 12px 13px;
 					font-weight: 900;
 					cursor: default;
-					background: var(--kl-diary-surface);
+					background:
+						linear-gradient(
+							180deg,
+							color-mix(in srgb, var(--kl-diary-surface-2) 94%, transparent),
+							color-mix(in srgb, var(--kl-diary-surface) 82%, transparent)
+						);
 					color: var(--kl-diary-ink);
 					display: flex;
 					align-items: flex-start;
 					justify-content: space-between;
 					gap: 10px;
+					box-shadow: 0 10px 24px rgba(0,0,0,0.11);
+					transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+				}
+				.kl-loadItem:hover {
+					transform: translateY(-1px);
+					border-color: color-mix(in srgb, var(--accent-green, #16a34a) 42%, var(--kl-diary-stroke));
+					box-shadow: 0 16px 30px rgba(0,0,0,0.15);
 				}
 				.kl-loadItemMain {
 					flex: 1 1 auto;
@@ -2160,17 +2229,35 @@ export default function MainDiary({ darkMode, onBack, initialView }) {
 				.kl-sessionItem {
 					width: 100%;
 					text-align: left;
-					border-radius: 14px;
-					border: 1px solid var(--kl-diary-stroke);
-					background: color-mix(in srgb, var(--kl-diary-surface) 70%, transparent);
-					padding: 10px 12px;
+					border-radius: 18px;
+					border: 1px solid color-mix(in srgb, var(--kl-diary-stroke) 82%, var(--accent-green-soft, #bbf7d0) 18%);
+					background:
+						linear-gradient(
+							180deg,
+							color-mix(in srgb, var(--kl-diary-surface-2) 90%, transparent),
+							color-mix(in srgb, var(--kl-diary-surface) 76%, transparent)
+						);
+					padding: 11px 12px;
 					cursor: pointer;
 					display: grid;
 					gap: 4px;
+					box-shadow: 0 10px 24px rgba(0,0,0,0.11);
+					transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+				}
+				.kl-sessionItem:hover {
+					transform: translateY(-1px);
+					border-color: color-mix(in srgb, var(--accent-green, #16a34a) 40%, var(--kl-diary-stroke));
+					box-shadow: 0 16px 30px rgba(0,0,0,0.15);
 				}
 				.kl-sessionItem[data-active="true"] {
-					border-color: color-mix(in srgb, var(--kl-diary-ink) 18%, var(--kl-diary-stroke));
-					box-shadow: 0 18px 42px rgba(0,0,0,0.10);
+					border-color: color-mix(in srgb, var(--accent-green, #16a34a) 54%, var(--kl-diary-stroke));
+					background:
+						linear-gradient(
+							180deg,
+							color-mix(in srgb, var(--accent-green-soft, #bbf7d0) 28%, var(--kl-diary-surface-2)),
+							color-mix(in srgb, var(--accent-green-soft, #bbf7d0) 12%, var(--kl-diary-surface))
+						);
+					box-shadow: 0 18px 36px rgba(0,0,0,0.16);
 				}
 				.kl-sessionTitle {
 					font-weight: 950;

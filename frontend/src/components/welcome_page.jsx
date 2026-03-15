@@ -590,7 +590,7 @@ export default function WelcomePage() {
 							<GlowCard>
 								<div className="kl-card-top">
 									<span className="kl-badge">2</span>
-									<h3 className="kl-card-title">Log sessions</h3>
+									<h3 className="kl-card-title">Log your sessions</h3>
 								</div>
 								<p className="kl-card-text">
 									Build a consistent diary of training and matches so you can spot patterns that actually matter.

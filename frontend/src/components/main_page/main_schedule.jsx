@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { moveNoteToBin } from "./bin_store.js";
 
 /* =========================
    Utilities
@@ -408,6 +409,15 @@ export default function MainSchedule({ darkMode = false }) {
 	}
 
 	function removeEvent(id) {
+		const current = Array.isArray(eventsRef.current) ? eventsRef.current : [];
+		const removed = current.find((e) => String(e?.id ?? "") === String(id));
+		if (!removed) return;
+		const moved = moveNoteToBin(removed);
+		if (!moved?.ok) {
+			showToast("Could not move note to Bin");
+			return;
+		}
+
 		if (editingId === id) {
 			setEditingId(null);
 			setDraft({ title: "", time: "", category: "practice", note: "" });
@@ -418,7 +428,7 @@ export default function MainSchedule({ darkMode = false }) {
 			persistEvents(next);
 			return next;
 		});
-		showToast("Note deleted successfully");
+		showToast("Note moved to Bin");
 	}
 
 	function toggleCompleted(id) {

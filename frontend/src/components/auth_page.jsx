@@ -1,39 +1,17 @@
 import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaGoogle, FaFacebookF, FaArrowLeft } from 'react-icons/fa';
+import { FaArrowLeft, FaEye, FaEyeSlash } from 'react-icons/fa';
 import axios from 'axios';
 import PrivacyPolicyModal from './privacy_policy.jsx';
 
 /**
- * Custom Social Button component for reusability.
- * @param {object} props
- * @param {React.Component} props.icon - The Fa icon component to display.
- * @param {string} props.label - The label for the button, used as a tooltip.
- */
-const SocialButton = ({ icon: Icon, label }) => (
-  <button
-    type="button"
-    className="social-btn"
-    title={label}
-    aria-label={label}
-  >
-    <Icon className="social-icon" size={18} />
-  </button>
-);
-
-/**
  * The Sign In Form Component.
  */
-const SignInForm = ({ formData, onChange, onSubmit }) => (
+const SignInForm = ({ formData, onChange, onSubmit, showPassword, onTogglePassword }) => (
   <form onSubmit={onSubmit} className="auth-form" aria-label="Sign in form">
     <h1 className="auth-title">Sign In</h1>
     
-    <div className="flex justify-center gap-3">
-      <SocialButton icon={FaGoogle} label="Google" />
-      <SocialButton icon={FaFacebookF} label="Facebook" />
-    </div>
-    
-    <p className="auth-subtitle">Or use your email password:</p>
+    <p className="auth-subtitle">Use your email and password:</p>
     
     <div className="flex flex-col gap-2">
       <input
@@ -45,15 +23,26 @@ const SignInForm = ({ formData, onChange, onSubmit }) => (
         className="form-input"
         required
       />
-      <input
-        type="password"
-        name="password"
-        value={formData.password}
-        onChange={onChange}
-        placeholder="Password"
-        className="form-input"
-        required
-      />
+      <div className="password-wrap">
+        <input
+          type={showPassword ? 'text' : 'password'}
+          name="password"
+          value={formData.password}
+          onChange={onChange}
+          placeholder="Password"
+          className="form-input password-input"
+          required
+        />
+        <button
+          type="button"
+          className="password-toggle"
+          onClick={onTogglePassword}
+          aria-label={showPassword ? 'Hide password' : 'Show password'}
+          title={showPassword ? 'Hide password' : 'Show password'}
+        >
+          {showPassword ? <FaEyeSlash size={16} aria-hidden="true" /> : <FaEye size={16} aria-hidden="true" />}
+        </button>
+      </div>
     </div>
     
     <a href="#" className="auth-link">
@@ -69,16 +58,11 @@ const SignInForm = ({ formData, onChange, onSubmit }) => (
 /**
  * The Sign Up Form Component.
  */
-const SignUpForm = ({ formData, onChange, onSubmit, onOpenPrivacy, privacyAccepted }) => (
+const SignUpForm = ({ formData, onChange, onSubmit, onOpenPrivacy, privacyAccepted, showPassword, onTogglePassword }) => (
   <form onSubmit={onSubmit} className="auth-form" aria-label="Sign up form">
     <h1 className="auth-title">Create Account</h1>
     
-    <div className="flex justify-center gap-3">
-      <SocialButton icon={FaGoogle} label="Google" />
-      <SocialButton icon={FaFacebookF} label="Facebook" />
-    </div>
-    
-    <p className="auth-subtitle">Or use your email for registration:</p>
+    <p className="auth-subtitle">Use your email to register:</p>
     
     <div className="flex flex-col gap-2">
       <input
@@ -99,15 +83,26 @@ const SignUpForm = ({ formData, onChange, onSubmit, onOpenPrivacy, privacyAccept
         className="form-input"
         required
       />
-      <input
-        type="password"
-        name="password"
-        value={formData.password}
-        onChange={onChange}
-        placeholder="Password"
-        className="form-input"
-        required
-      />
+      <div className="password-wrap">
+        <input
+          type={showPassword ? 'text' : 'password'}
+          name="password"
+          value={formData.password}
+          onChange={onChange}
+          placeholder="Password"
+          className="form-input password-input"
+          required
+        />
+        <button
+          type="button"
+          className="password-toggle"
+          onClick={onTogglePassword}
+          aria-label={showPassword ? 'Hide password' : 'Show password'}
+          title={showPassword ? 'Hide password' : 'Show password'}
+        >
+          {showPassword ? <FaEyeSlash size={16} aria-hidden="true" /> : <FaEye size={16} aria-hidden="true" />}
+        </button>
+      </div>
     </div>
 
     <button
@@ -146,6 +141,7 @@ const SignUpForm = ({ formData, onChange, onSubmit, onOpenPrivacy, privacyAccept
 export default function AuthPage({ onLogin = () => {} }) {
   // State to manage which view is active: true for Sign Up, false for Sign In (login)
   const [isSignUpActive, setIsSignUpActive] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({ email: '', username: '', password: '' });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -520,34 +516,6 @@ export default function AuthPage({ onLogin = () => {} }) {
           text-underline-offset: 3px;
         }
 
-        .social-btn {
-          width: 48px;
-          height: 48px;
-          border: 1.5px solid var(--kl-auth-stroke);
-          border-radius: 50%;
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          background: color-mix(in srgb, var(--kl-auth-surface) 80%, transparent);
-          transition: transform var(--kl-auth-dur) var(--kl-auth-ease), border-color var(--kl-auth-dur) var(--kl-auth-ease), background-color var(--kl-auth-dur) var(--kl-auth-ease);
-          cursor: pointer;
-        }
-
-        .social-icon {
-          color: color-mix(in srgb, var(--kl-auth-fg) 62%, transparent);
-          transition: color var(--kl-auth-dur) var(--kl-auth-ease);
-        }
-
-        .social-btn:hover {
-          background: color-mix(in srgb, var(--kl-auth-surface2) 80%, transparent);
-          border-color: color-mix(in srgb, var(--accent-green, #16a34a) 36%, var(--kl-auth-stroke));
-          transform: translateY(-3px);
-        }
-
-        .social-btn:hover .social-icon {
-          color: color-mix(in srgb, var(--accent-green, #16a34a) 70%, var(--kl-auth-fg));
-        }
-
         .form-input {
           width: 100%;
           padding: 10px 16px;
@@ -572,6 +540,42 @@ export default function AuthPage({ onLogin = () => {} }) {
           box-shadow:
             0 0 0 3px color-mix(in srgb, var(--accent-green-soft, #bbf7d0) 55%, transparent),
             0 10px 30px rgba(0,0,0,0.14);
+        }
+
+        .password-wrap {
+          position: relative;
+          width: 100%;
+        }
+
+        .password-input {
+          padding-right: 44px;
+        }
+
+        .password-toggle {
+          position: absolute;
+          right: 12px;
+          top: 50%;
+          transform: translateY(-50%);
+          border: none;
+          background: transparent;
+          color: color-mix(in srgb, var(--kl-auth-fg) 64%, transparent);
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          padding: 2px;
+          border-radius: 8px;
+          transition: color var(--kl-auth-dur) var(--kl-auth-ease), background-color var(--kl-auth-dur) var(--kl-auth-ease);
+        }
+
+        .password-toggle:hover {
+          color: color-mix(in srgb, var(--accent-green, #16a34a) 72%, var(--kl-auth-fg));
+          background: color-mix(in srgb, var(--kl-auth-surface2) 72%, transparent);
+        }
+
+        .password-toggle:focus-visible {
+          outline: none;
+          box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-green-soft, #bbf7d0) 55%, transparent);
         }
 
         .primary-btn {
@@ -647,7 +651,6 @@ export default function AuthPage({ onLogin = () => {} }) {
           .purple-panel,
           .form-panel { transition: none !important; }
           .outline-btn,
-          .social-btn,
           .primary-btn,
           .form-input { transition: none !important; }
         }
@@ -690,7 +693,10 @@ export default function AuthPage({ onLogin = () => {} }) {
               }
             </p>
             <button 
-              onClick={() => setIsSignUpActive(!isSignUpActive)} 
+              onClick={() => {
+                setIsSignUpActive(!isSignUpActive);
+                setShowPassword(false);
+              }} 
               className="outline-btn"
             >
               {isSignUpActive ? 'SIGN IN' : 'SIGN UP'}
@@ -700,7 +706,14 @@ export default function AuthPage({ onLogin = () => {} }) {
           <div className={`form-panel ${isSignUpActive ? 'shifted' : ''}`}>
             <div className="w-full flex flex-col items-center">
               {!isSignUpActive ? (
-                <SignInForm key="signin" formData={formData} onChange={handleInputChange} onSubmit={handleSubmit} />
+                <SignInForm
+                  key="signin"
+                  formData={formData}
+                  onChange={handleInputChange}
+                  onSubmit={handleSubmit}
+                  showPassword={showPassword}
+                  onTogglePassword={() => setShowPassword((v) => !v)}
+                />
               ) : (
                 <SignUpForm
                   key="signup"
@@ -709,6 +722,8 @@ export default function AuthPage({ onLogin = () => {} }) {
                   onSubmit={handleSubmit}
                   onOpenPrivacy={() => setPrivacyOpen(true)}
                   privacyAccepted={privacyAccepted}
+                  showPassword={showPassword}
+                  onTogglePassword={() => setShowPassword((v) => !v)}
                 />
               )}
 
