@@ -288,7 +288,7 @@ export default function MainBin({ darkMode }) {
 					overflow: auto;
 					padding: 10px;
 					box-sizing: border-box;
-					font-family: "Trebuchet MS", "Segoe UI", "Helvetica Neue", sans-serif;
+					font-family: var(--kl-font-family, inherit);
 					--kl-bin-list-pattern-opacity: 0.24;
 					--kl-bin-list-pattern:
 						radial-gradient(580px 190px at 10% 0%, rgba(var(--accent-green-rgb, 22,163,74), 0.24), transparent 65%),

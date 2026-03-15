@@ -1,8 +1,10 @@
-import React, { useState, useRef } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaArrowLeft, FaEye, FaEyeSlash } from 'react-icons/fa';
+import { FaArrowLeft, FaCheck, FaEye, FaEyeSlash, FaTimes } from 'react-icons/fa';
 import axios from 'axios';
 import PrivacyPolicyModal from './privacy_policy.jsx';
+
+const AUTH_STATUS_VISIBILITY_MS = 2300;
 
 /**
  * The Sign In Form Component.
@@ -143,13 +145,30 @@ export default function AuthPage({ onLogin = () => {} }) {
   const [isSignUpActive, setIsSignUpActive] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({ email: '', username: '', password: '' });
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [authStatus, setAuthStatus] = useState(null);
   const [showConfetti, setShowConfetti] = useState(false);
   const [privacyOpen, setPrivacyOpen] = useState(false);
   const [privacyAccepted, setPrivacyAccepted] = useState(false);
   const navigate = useNavigate();
   const confettiRef = useRef(null);
+  const statusTimerRef = useRef(null);
+  const redirectTimerRef = useRef(null);
+
+  const clearFeedbackTimers = () => {
+    if (statusTimerRef.current) {
+      clearTimeout(statusTimerRef.current);
+      statusTimerRef.current = null;
+    }
+
+    if (redirectTimerRef.current) {
+      clearTimeout(redirectTimerRef.current);
+      redirectTimerRef.current = null;
+    }
+  };
+
+  useEffect(() => () => {
+    clearFeedbackTimers();
+  }, []);
 
   // Function to handle input field changes
   const handleInputChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -160,11 +179,21 @@ export default function AuthPage({ onLogin = () => {} }) {
   // Function to handle form submission for login and registration
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
-    setSuccess('');
+    clearFeedbackTimers();
+    setAuthStatus(null);
+    const isSigningUp = isSignUpActive;
 
-    if (isSignUpActive && !privacyAccepted) {
-      setError('Please confirm the privacy policy to create an account.');
+    if (isSigningUp && !privacyAccepted) {
+      setAuthStatus({
+        kind: 'error',
+        badge: 'Action needed',
+        title: 'Privacy policy required',
+        text: 'Please confirm the privacy policy to create an account.',
+      });
+      statusTimerRef.current = setTimeout(() => {
+        setAuthStatus(null);
+        statusTimerRef.current = null;
+      }, AUTH_STATUS_VISIBILITY_MS);
       setPrivacyOpen(true);
       return;
     }
@@ -177,7 +206,7 @@ export default function AuthPage({ onLogin = () => {} }) {
         },
       };
 
-      if (isSignUpActive) {
+      if (isSigningUp) {
         const registerRes = await axios.post(
           `${import.meta.env.VITE_API_URL}/api/users/register`,
           {
@@ -222,17 +251,41 @@ export default function AuthPage({ onLogin = () => {} }) {
 
       localStorage.setItem('token', token);
 
-      setSuccess(isSignUpActive ? 'Signed up! You are now signed in.' : 'Signed in! Redirecting...');
+      setAuthStatus(
+        isSigningUp
+          ? {
+              kind: 'success',
+              badge: 'Account created',
+              title: 'Welcome to KickLog',
+              text: 'Your account is ready and everything is synced.',
+            }
+          : {
+              kind: 'success',
+              badge: 'Signed in',
+              title: 'Great to see you again',
+              text: 'Sign in successful. Preparing your dashboard now.',
+            }
+      );
       triggerConfetti();
 
-      setTimeout(() => {
+      redirectTimerRef.current = setTimeout(() => {
+        redirectTimerRef.current = null;
         onLogin(formData);
         navigate('/main');
-      }, 400);
+      }, AUTH_STATUS_VISIBILITY_MS);
     } catch (err) {
       console.error('Auth error:', err);
       const message = err?.response?.data?.message || err?.message || 'Authentication failed';
-      setError(message);
+      setAuthStatus({
+        kind: 'error',
+        badge: 'Authentication error',
+        title: isSigningUp ? 'Sign up failed' : 'Sign in failed',
+        text: message,
+      });
+      statusTimerRef.current = setTimeout(() => {
+        setAuthStatus(null);
+        statusTimerRef.current = null;
+      }, AUTH_STATUS_VISIBILITY_MS);
     }
   };
 
@@ -644,6 +697,210 @@ export default function AuthPage({ onLogin = () => {} }) {
           transform: translateX(-50%) translateY(0);
         }
 
+        @keyframes authStatusOverlayIn {
+          0% { opacity: 0; }
+          100% { opacity: 1; }
+        }
+
+        @keyframes authStatusCardIn {
+          0% { opacity: 0; transform: translateY(14px) scale(0.96); filter: blur(8px); }
+          100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+        }
+
+        @keyframes authStatusRing {
+          0% { transform: scale(0.92); opacity: 0.72; }
+          100% { transform: scale(1.22); opacity: 0; }
+        }
+
+        @keyframes authStatusLoad {
+          0% { transform: scaleX(0); }
+          100% { transform: scaleX(1); }
+        }
+
+        @keyframes authStatusSweep {
+          0% { transform: translateX(-120%); }
+          100% { transform: translateX(120%); }
+        }
+
+        .auth-status-overlay {
+          position: absolute;
+          inset: 0;
+          z-index: 40;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: clamp(16px, 2.4vw, 26px);
+          animation: authStatusOverlayIn 220ms var(--kl-auth-ease) both;
+          backdrop-filter: blur(6px);
+        }
+
+        .auth-status-overlay.is-success {
+          background:
+            radial-gradient(380px 220px at 50% 6%, color-mix(in srgb, var(--accent-green-soft, #bbf7d0) 50%, transparent), transparent 64%),
+            color-mix(in srgb, rgba(7, 33, 19, 0.62) 72%, transparent);
+        }
+
+        .auth-status-overlay.is-error {
+          background:
+            radial-gradient(380px 220px at 50% 6%, rgba(254, 202, 202, 0.58), transparent 64%),
+            rgba(69, 10, 10, 0.62);
+        }
+
+        .auth-status-card {
+          width: min(100%, 420px);
+          border-radius: 26px;
+          border: 1px solid transparent;
+          padding: 20px 18px 16px;
+          box-shadow: 0 24px 80px rgba(0,0,0,0.42);
+          display: grid;
+          gap: 10px;
+          text-align: center;
+          animation: authStatusCardIn 320ms var(--kl-auth-ease) both;
+        }
+
+        .auth-status-overlay.is-success .auth-status-card {
+          background: color-mix(in srgb, #ffffff 86%, var(--accent-green-soft, #bbf7d0) 14%);
+          border-color: color-mix(in srgb, var(--accent-green, #16a34a) 36%, #bbf7d0);
+          color: color-mix(in srgb, #0f172a 86%, var(--accent-green, #16a34a));
+        }
+
+        .auth-status-overlay.is-error .auth-status-card {
+          background: color-mix(in srgb, #ffffff 88%, #fee2e2 12%);
+          border-color: rgba(239, 68, 68, 0.45);
+          color: #7f1d1d;
+        }
+
+        .auth-status-markWrap {
+          display: flex;
+          justify-content: center;
+          margin-bottom: 2px;
+        }
+
+        .auth-status-mark {
+          position: relative;
+          width: 82px;
+          height: 82px;
+          border-radius: 999px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          box-shadow: 0 16px 42px rgba(0,0,0,0.24);
+        }
+
+        .auth-status-mark::after {
+          content: "";
+          position: absolute;
+          inset: -6px;
+          border-radius: inherit;
+          border: 2px solid currentColor;
+          opacity: 0;
+          animation: authStatusRing 1.1s ease-out infinite;
+        }
+
+        .auth-status-overlay.is-success .auth-status-mark {
+          background: linear-gradient(135deg, color-mix(in srgb, var(--accent-green, #16a34a) 84%, #0b1220), color-mix(in srgb, var(--accent-green, #16a34a) 62%, #bbf7d0));
+          color: #ecfdf5;
+        }
+
+        .auth-status-overlay.is-error .auth-status-mark {
+          background: linear-gradient(135deg, #dc2626, #b91c1c);
+          color: #fff1f2;
+        }
+
+        .auth-status-badge {
+          justify-self: center;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 999px;
+          padding: 5px 12px;
+          font-size: 11px;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          font-weight: 900;
+          border: 1px solid transparent;
+        }
+
+        .auth-status-overlay.is-success .auth-status-badge {
+          background: color-mix(in srgb, var(--accent-green-soft, #bbf7d0) 72%, transparent);
+          border-color: color-mix(in srgb, var(--accent-green, #16a34a) 30%, transparent);
+          color: color-mix(in srgb, #0f172a 80%, var(--accent-green, #16a34a));
+        }
+
+        .auth-status-overlay.is-error .auth-status-badge {
+          background: rgba(255, 241, 242, 0.95);
+          border-color: rgba(239, 68, 68, 0.38);
+          color: #991b1b;
+        }
+
+        .auth-status-title {
+          margin: 0;
+          font-size: 21px;
+          line-height: 1.12;
+          font-weight: 950;
+          letter-spacing: -0.02em;
+        }
+
+        .auth-status-text {
+          margin: 0;
+          font-size: 13.5px;
+          line-height: 1.5;
+          font-weight: 800;
+          opacity: 0.92;
+        }
+
+        .auth-status-loader {
+          margin-top: 2px;
+          height: 10px;
+          border-radius: 999px;
+          position: relative;
+          overflow: hidden;
+          border: 1px solid transparent;
+          background: color-mix(in srgb, #e2e8f0 85%, transparent);
+        }
+
+        .auth-status-overlay.is-success .auth-status-loader {
+          border-color: color-mix(in srgb, var(--accent-green, #16a34a) 24%, transparent);
+        }
+
+        .auth-status-overlay.is-error .auth-status-loader {
+          border-color: rgba(239, 68, 68, 0.35);
+          background: rgba(254, 226, 226, 0.72);
+        }
+
+        .auth-status-loaderFill {
+          position: absolute;
+          inset: 0;
+          transform-origin: left center;
+          animation: authStatusLoad var(--auth-status-duration, 2300ms) linear forwards;
+        }
+
+        .auth-status-overlay.is-success .auth-status-loaderFill {
+          background: linear-gradient(90deg, color-mix(in srgb, var(--accent-green, #16a34a) 86%, #0b1220), color-mix(in srgb, var(--accent-green, #16a34a) 62%, #bbf7d0));
+        }
+
+        .auth-status-overlay.is-error .auth-status-loaderFill {
+          background: linear-gradient(90deg, #dc2626, #f97316);
+        }
+
+        .auth-status-loaderFill::after {
+          content: "";
+          position: absolute;
+          inset: 0;
+          width: 40%;
+          background: linear-gradient(90deg, transparent, rgba(255,255,255,.55), transparent);
+          animation: authStatusSweep 1.1s linear infinite;
+        }
+
+        .auth-status-meta {
+          margin: 0;
+          font-size: 11.5px;
+          letter-spacing: 0.06em;
+          text-transform: uppercase;
+          font-weight: 900;
+          opacity: 0.84;
+        }
+
         @media (prefers-reduced-motion: reduce) {
           .auth-container { animation: none !important; }
           .auth-form { animation: none !important; }
@@ -652,7 +909,12 @@ export default function AuthPage({ onLogin = () => {} }) {
           .form-panel { transition: none !important; }
           .outline-btn,
           .primary-btn,
-          .form-input { transition: none !important; }
+          .form-input,
+          .auth-status-overlay,
+          .auth-status-card,
+          .auth-status-mark::after,
+          .auth-status-loaderFill,
+          .auth-status-loaderFill::after { transition: none !important; animation: none !important; }
         }
 
         @media (max-width: 968px) {
@@ -694,6 +956,8 @@ export default function AuthPage({ onLogin = () => {} }) {
             </p>
             <button 
               onClick={() => {
+                clearFeedbackTimers();
+                setAuthStatus(null);
                 setIsSignUpActive(!isSignUpActive);
                 setShowPassword(false);
               }} 
@@ -726,22 +990,39 @@ export default function AuthPage({ onLogin = () => {} }) {
                   onTogglePassword={() => setShowPassword((v) => !v)}
                 />
               )}
-
-              {(error || success) && (
-                <div
-                  className={`mt-4 w-full max-w-[360px] px-6 py-3 rounded-xl font-bold text-sm text-center border ${
-                    error
-                      ? "bg-red-500/10 text-red-700 border-red-300"
-                      : "bg-green-500/10 text-green-700 border-green-300"
-                  }`}
-                  role={error ? "alert" : "status"}
-                  aria-live={error ? "assertive" : "polite"}
-                >
-                  {error || success}
-                </div>
-              )}
             </div>
           </div>
+
+          {authStatus ? (
+            <div
+              className={`auth-status-overlay ${authStatus.kind === 'error' ? 'is-error' : 'is-success'}`}
+              role={authStatus.kind === 'error' ? 'alert' : 'status'}
+              aria-live={authStatus.kind === 'error' ? 'assertive' : 'polite'}
+              style={{ '--auth-status-duration': `${AUTH_STATUS_VISIBILITY_MS}ms` }}
+            >
+              <div className="auth-status-card">
+                <div className="auth-status-markWrap">
+                  <span className="auth-status-mark" aria-hidden="true">
+                    {authStatus.kind === 'error' ? <FaTimes size={30} /> : <FaCheck size={30} />}
+                  </span>
+                </div>
+
+                <span className="auth-status-badge">{authStatus.badge}</span>
+                <p className="auth-status-title">{authStatus.title}</p>
+                <p className="auth-status-text">{authStatus.text}</p>
+
+                <div className="auth-status-loader" aria-hidden="true">
+                  <span className="auth-status-loaderFill" />
+                </div>
+
+                <p className="auth-status-meta">
+                  {authStatus.kind === 'success'
+                    ? 'Redirecting to your dashboard'
+                    : 'Please check your details and try again'}
+                </p>
+              </div>
+            </div>
+          ) : null}
         </div>
       </div>
     </div>

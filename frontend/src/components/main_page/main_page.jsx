@@ -216,6 +216,15 @@ export default function MainPage() {
 				[data-page="main"] {
 					font-family: var(--kl-font-family, inherit);
 				}
+				[data-page="main"] aside[aria-label="Main sidebar"] {
+					font-family: var(--kl-font-family, inherit);
+				}
+				[data-page="main"] aside[aria-label="Main sidebar"] button,
+				[data-page="main"] aside[aria-label="Main sidebar"] input,
+				[data-page="main"] aside[aria-label="Main sidebar"] select,
+				[data-page="main"] aside[aria-label="Main sidebar"] textarea {
+					font-family: inherit;
+				}
 				[data-page="main"][data-font="mono"] {
 					font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
 				}
